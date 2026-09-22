@@ -248,7 +248,7 @@
   const SUPABASE_ANON_KEY = "sb_publishable_i8tsXdhPq1CorHwIjGsD_w_HWtk_cm8";
   // ---------------------------------------------------------------
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let currentUser = null;
   let currentProfile = null;
@@ -333,7 +333,7 @@
     const id = e.target.dataset.id;
     const newStatus = e.target.value;
     e.target.disabled = true;
-    const { error } = await supabase.from('clients')
+    const { error } = await sb.from('clients')
       .update({ status: newStatus, updated_by: currentUser.id, updated_at: new Date().toISOString() })
       .eq('id', id);
     e.target.disabled = false;
@@ -343,7 +343,7 @@
 
   // ---------- Data loading ----------
   async function loadProfiles(){
-    const { data, error } = await supabase.from('profiles').select('id, full_name, role');
+    const { data, error } = await sb.from('profiles').select('id, full_name, role');
     if (error) return;
     profilesMap = Object.fromEntries(data.map(p => [p.id, p.full_name]));
     staffList = data;
@@ -353,7 +353,7 @@
   }
 
   async function loadClients(){
-    const { data, error } = await supabase.from('clients').select('*');
+    const { data, error } = await sb.from('clients').select('*');
     if (error) {
       boardEl.innerHTML = `<div class="column-empty">Could not load clients: ${escapeHtml(error.message)}</div>`;
       return;
@@ -370,7 +370,7 @@
     const overdue = clients.filter(c => c.due_date && c.due_date < today && c.status === 'blue');
     for (const c of overdue) {
       c.status = 'red'; // reflect locally immediately
-      await supabase.from('clients')
+      await sb.from('clients')
         .update({ status: 'red', updated_by: currentUser.id, updated_at: new Date().toISOString() })
         .eq('id', c.id);
     }
@@ -427,11 +427,11 @@
 
     let error;
     if (editingClientId) {
-      ({ error } = await supabase.from('clients')
+      ({ error } = await sb.from('clients')
         .update({ name, due_date, assigned_to, updated_by: currentUser.id, updated_at: new Date().toISOString() })
         .eq('id', editingClientId));
     } else {
-      ({ error } = await supabase.from('clients')
+      ({ error } = await sb.from('clients')
         .insert({ name, due_date, assigned_to, status: 'blue', updated_by: currentUser.id, updated_at: new Date().toISOString() }));
     }
 
@@ -444,7 +444,7 @@
   async function deleteClient(id){
     const c = clients.find(x => x.id === id);
     if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
-    const { error } = await supabase.from('clients').delete().eq('id', id);
+    const { error } = await sb.from('clients').delete().eq('id', id);
     if (error) { alert('Could not delete: ' + error.message); return; }
     closeDetailModal();
     await loadClients();
@@ -473,7 +473,7 @@
   detailBackdrop.addEventListener('click', (e) => { if (e.target === detailBackdrop) closeDetailModal(); });
 
   async function loadNotes(clientId){
-    const { data } = await supabase.from('client_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false });
+    const { data } = await sb.from('client_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false });
     const list = document.getElementById('notesList');
     if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No notes yet.</div>`; return; }
     list.innerHTML = data.map(n => `
@@ -484,7 +484,7 @@
   }
 
   async function loadHistory(clientId){
-    const { data } = await supabase.from('status_history').select('*').eq('client_id', clientId).order('changed_at', { ascending: false });
+    const { data } = await sb.from('status_history').select('*').eq('client_id', clientId).order('changed_at', { ascending: false });
     const list = document.getElementById('historyList');
     if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No history yet.</div>`; return; }
     list.innerHTML = data.map(h => `
@@ -500,7 +500,7 @@
     if (!body || !openDetailId) return;
     const btn = document.getElementById('addNoteBtn');
     btn.disabled = true;
-    const { error } = await supabase.from('client_notes').insert({ client_id: openDetailId, author_id: currentUser.id, body });
+    const { error } = await sb.from('client_notes').insert({ client_id: openDetailId, author_id: currentUser.id, body });
     btn.disabled = false;
     if (error) { alert('Could not add note: ' + error.message); return; }
     textEl.value = '';
@@ -535,7 +535,7 @@
 
     const btn = document.getElementById('importCsvBtn');
     btn.disabled = true; btn.textContent = 'Importing...';
-    const { error } = await supabase.from('clients').insert(rows);
+    const { error } = await sb.from('clients').insert(rows);
     btn.disabled = false; btn.textContent = 'Import';
 
     if (error) { errEl.textContent = 'Import failed: ' + error.message; return; }
@@ -643,7 +643,7 @@
 
   // ---------- Live updates ----------
   function setupRealtime(){
-    supabase.channel('clients-live')
+    sb.channel('clients-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
         showToast(`New client added: ${payload.new.name}`);
         loadClients();
@@ -661,18 +661,18 @@
 
   // ---------- Boot ----------
   document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     window.location.href = 'index.html';
   });
 
   (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'index.html'; return; }
     currentUser = session.user;
 
-    const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', currentUser.id).single();
+    const { data: profile } = await sb.from('profiles').select('full_name, role').eq('id', currentUser.id).single();
     if (!profile || !['staff', 'head'].includes(profile.role)) {
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       window.location.href = 'index.html';
       return;
     }
