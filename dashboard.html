@@ -37,7 +37,6 @@
   .app-body{max-width:1200px; margin:0 auto; padding:28px; display:flex; gap:20px; align-items:flex-start;}
   main{flex:1; min-width:0;}
 
-  /* ---- Sidebar: deleted clients log ---- */
   .sidebar{
     width:260px; flex-shrink:0; background:#fff; border:1px solid var(--line);
     border-radius:8px; padding:16px; position:sticky; top:20px;
@@ -54,7 +53,6 @@
   .deleted-item .name{font-weight:600; color:var(--ink); font-size:13px;}
   .deleted-item .meta{color:var(--muted); margin-top:2px;}
 
-  /* ---- Tabs (Board / Overview) ---- */
   .tabs{display:flex; gap:6px; margin-bottom:18px;}
   .tabs button{
     padding:8px 14px; border:1px solid var(--line); background:#fff; color:var(--muted);
@@ -62,7 +60,6 @@
   }
   .tabs button.active{background:var(--navy); color:#fff; border-color:var(--navy);}
 
-  /* ---- Status filter pills ---- */
   .filter-tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
   .filter-tab{
     padding:8px 16px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer;
@@ -75,7 +72,6 @@
   .filter-tab.red{background:var(--red-bg); color:var(--red);}
   .filter-tab.green{background:var(--green-bg); color:var(--green);}
 
-  /* ---- Toolbar ---- */
   .toolbar{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
   .toolbar input[type="text"]{
     flex:1; min-width:180px; padding:10px 14px; border:1px solid var(--line);
@@ -92,7 +88,6 @@
   .toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
   .toolbar .check{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); cursor:pointer;}
 
-  /* ---- Sort / letter-jump popover ---- */
   .popover{position:relative; display:inline-block;}
   .popover-menu{
     position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:1px solid var(--line);
@@ -111,7 +106,6 @@
   .letter-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:4px;}
   .letter-grid button.all-letters{grid-column:1/-1; margin-bottom:4px;}
 
-  /* ---- Client list (table) ---- */
   .table-wrap{background:#fff; border:1px solid var(--line); border-radius:8px; overflow-x:auto;}
   .client-table{width:100%; border-collapse:collapse; font-size:13px;}
   .client-table thead th{
@@ -139,7 +133,6 @@
   .status-pill.green{background:var(--green-bg); color:var(--green);}
   .column-empty{padding:22px 6px; text-align:center; color:var(--muted); font-size:13px; white-space:normal;}
 
-  /* Admin-only elements hidden for staff */
   body.staff-view .actions-col,
   body.staff-view #modeExcelBtn{ display:none !important; }
 
@@ -149,7 +142,6 @@
     main{order:1; width:100%;}
   }
 
-  /* ---- Overview (admin) ---- */
   .stat-row{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
   .stat-card{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px;}
   .stat-card .num{font-size:26px; font-weight:700;}
@@ -160,7 +152,6 @@
   .panel th{text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--line);}
   .panel td{padding:7px 8px; border-bottom:1px solid #F0F0EE;}
 
-  /* ---- Modals ---- */
   .modal-backdrop{
     display:none; position:fixed; inset:0; background:rgba(28,30,38,.4);
     align-items:center; justify-content:center; padding:20px; z-index:40; overflow-y:auto;
@@ -194,7 +185,6 @@
   .add-note-row textarea{flex:1;}
   .add-note-row button{padding:0 14px; background:var(--navy); color:#fff; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px;}
 
-  /* ---- Toasts + alerts ---- */
   .toast-stack{position:fixed; top:16px; right:16px; z-index:50; display:flex; flex-direction:column; gap:8px; max-width:320px;}
   .toast{background:var(--ink); color:#fff; padding:11px 14px; border-radius:7px; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,.18); animation:slideIn .18s ease-out;}
   @keyframes slideIn{from{transform:translateX(16px); opacity:0;} to{transform:translateX(0); opacity:1;}}
@@ -267,10 +257,11 @@
               <th>Due date</th>
               <th>Status</th>
               <th>Last updated</th>
+              <th>Notes</th>
               <th class="actions-col">Actions</th>
             </tr>
           </thead>
-          <tbody id="clientsBody"><tr><td colspan="6" class="column-empty">Loading clients...</td></tr></tbody>
+          <tbody id="clientsBody"><tr><td colspan="7" class="column-empty">Loading clients...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -280,7 +271,6 @@
 
 </div>
 
-<!-- Add/Edit client modal -->
 <div class="modal-backdrop" id="clientModalBackdrop">
   <div class="modal">
     <h2><span id="clientModalTitle">Add client</span><span class="close-x" id="closeClientModal">&times;</span></h2>
@@ -321,7 +311,6 @@
   </div>
 </div>
 
-<!-- Client detail modal -->
 <div class="modal-backdrop" id="detailBackdrop">
   <div class="modal wide">
     <h2><span id="detailName">Client</span><span class="close-x" id="closeDetail">&times;</span></h2>
@@ -348,10 +337,8 @@
 </div>
 
 <script>
-  // ---- Fill these in from your Supabase project (Settings > API) ----
   const SUPABASE_URL = "https://peqzoyzxdrsjovpmuirm.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_ePzp2ldvvl1eh5EGlPdCzg__gnBEnwV";
-  // ---------------------------------------------------------------
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -359,13 +346,13 @@
   let currentProfile = null;
   let clients = [];
   let deletedClients = [];
-  let profilesMap = {};   // id -> full_name
-  let staffList = [];     // [{id, full_name}]
+  let profilesMap = {};
+  let staffList = [];
   let sortAsc = true;
   let searchTerm = '';
   let myClientsOnly = false;
-  let statusFilter = 'all';   // 'all' | 'blue' | 'red' | 'green'
-  let letterFilter = null;    // null or 'A'..'Z'
+  let statusFilter = 'all';
+  let letterFilter = null;
   let editingClientId = null;
   let openDetailId = null;
 
@@ -387,9 +374,7 @@
   }
   function statusLabel(s){ return { green: 'Completed', blue: 'In Progress', red: 'Delayed 1 month' }[s] || s; }
 
-  // ---------- Filtering / sorting ----------
   function baseFiltered(){
-    // search + "my clients" applied, used both for the list and for the filter-tab counts
     let rows = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (myClientsOnly) rows = rows.filter(c => c.assigned_to === currentUser.id);
     if (letterFilter) rows = rows.filter(c => c.name.toUpperCase().startsWith(letterFilter));
@@ -402,7 +387,6 @@
     return rows;
   }
 
-  // ---------- Filter pills ----------
   function renderFilterTabs(){
     const rows = baseFiltered();
     const counts = { all: rows.length, blue: 0, red: 0, green: 0 };
@@ -423,17 +407,17 @@
     }));
   }
 
-  // ---------- List rendering ----------
   function render(){
     renderFilterTabs();
     const rows = visibleClients();
     const body = document.getElementById('clientsBody');
     body.innerHTML = rows.length
       ? rows.map(rowHtml).join('')
-      : `<tr><td colspan="6" class="column-empty">No clients match.</td></tr>`;
+      : `<tr><td colspan="7" class="column-empty">No clients match.</td></tr>`;
 
     document.querySelectorAll('.status-pill').forEach(sel => sel.addEventListener('change', onStatusChange));
     document.querySelectorAll('.client-name-link').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.id)));
+    document.querySelectorAll('.notes-icon').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.id)));
     document.querySelectorAll('.edit-icon').forEach(el => el.addEventListener('click', () => openClientModal(el.dataset.id)));
     document.querySelectorAll('.delete-icon').forEach(el => el.addEventListener('click', () => deleteClient(el.dataset.id)));
   }
@@ -454,6 +438,9 @@
           </select>
         </td>
         <td class="muted-cell">${timeAgo(c.updated_at)}</td>
+        <td>
+          <span class="icon-btn notes-icon" data-id="${c.id}" title="Notes">📝</span>
+        </td>
         <td class="actions-col">
           <div class="row-actions">
             <span class="icon-btn edit-icon" data-id="${c.id}" title="Edit">✎</span>
@@ -476,7 +463,6 @@
     await loadClients();
   }
 
-  // ---------- Sort / letter-jump popover ----------
   function updateSortLabel(){
     document.getElementById('sortBtn').textContent = letterFilter
       ? `Letter: ${letterFilter} ▾`
@@ -507,7 +493,6 @@
     if (menu.classList.contains('open') && !e.target.closest('.popover')) menu.classList.remove('open');
   });
 
-  // ---------- Data loading ----------
   async function loadProfiles(){
     const { data, error } = await sb.from('profiles').select('id, full_name, role');
     if (error) return;
@@ -521,7 +506,7 @@
   async function loadClients(){
     const { data, error } = await sb.from('clients').select('*');
     if (error) {
-      document.getElementById('clientsBody').innerHTML = `<tr><td colspan="6" class="column-empty">Could not load clients: ${escapeHtml(error.message)}</td></tr>`;
+      document.getElementById('clientsBody').innerHTML = `<tr><td colspan="7" class="column-empty">Could not load clients: ${escapeHtml(error.message)}</td></tr>`;
       return;
     }
     clients = data;
@@ -555,19 +540,17 @@
   }
   document.getElementById('deletedSearch').addEventListener('input', renderDeletedList);
 
-  // Auto-flag anything past its due date that isn't already red or completed
   async function checkOverdue(){
     const today = new Date().toISOString().slice(0, 10);
     const overdue = clients.filter(c => c.due_date && c.due_date < today && c.status === 'blue');
     for (const c of overdue) {
-      c.status = 'red'; // reflect locally immediately
+      c.status = 'red';
       await sb.from('clients')
         .update({ status: 'red', updated_by: currentUser.id, updated_at: new Date().toISOString() })
         .eq('id', c.id);
     }
   }
 
-  // ---------- Add / Edit client modal ----------
   const clientModalBackdrop = document.getElementById('clientModalBackdrop');
   function setAddMode(mode){
     document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
@@ -644,7 +627,6 @@
     if (!c) return;
     if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
 
-    // Log the deletion so staff can search for it later as confirmation
     const { error: logError } = await sb.from('deleted_clients').insert({
       name: c.name, due_date: c.due_date, assigned_to: c.assigned_to, deleted_by: currentUser.id
     });
@@ -657,7 +639,6 @@
     await loadDeletedClients();
   }
 
-  // ---------- Client detail modal (notes + history) ----------
   const detailBackdrop = document.getElementById('detailBackdrop');
   async function openDetail(id){
     openDetailId = id;
@@ -716,11 +697,9 @@
     await loadNotes(openDetailId);
   });
 
-  // ---------- Toolbar: search, my clients ----------
   document.getElementById('searchInput').addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
   document.getElementById('myClientsToggle').addEventListener('change', (e) => { myClientsOnly = e.target.checked; render(); });
 
-  // ---------- Excel export ----------
   document.getElementById('exportBtn').addEventListener('click', () => {
     const rows = visibleClients();
     const data = rows.map(c => ({
@@ -737,7 +716,6 @@
     XLSX.writeFile(wb, `fintrack-clients-${new Date().toISOString().slice(0,10)}.xlsx`);
   });
 
-  // ---------- Excel import (Admin only — assigns imported clients to chosen staff) ----------
   document.getElementById('importExcelBtn').addEventListener('click', async () => {
     if (!isAdmin()) { alert('Only Admin can import clients from Excel.'); return; }
     const fileInput = document.getElementById('excelFile');
@@ -782,7 +760,6 @@
     await loadClients();
   });
 
-  // ---------- Overview tab (Admin only) ----------
   document.getElementById('tabBoard').addEventListener('click', () => switchTab('board'));
   document.getElementById('tabOverview').addEventListener('click', () => switchTab('overview'));
   function switchTab(tab){
@@ -824,7 +801,6 @@
       </div>`;
   }
 
-  // ---------- Toasts ----------
   function showToast(message){
     const stack = document.getElementById('toastStack');
     const el = document.createElement('div');
@@ -834,7 +810,6 @@
     setTimeout(() => el.remove(), 5000);
   }
 
-  // ---------- Alarm sound ----------
   let audioCtx = null;
   function primeAudio(){ if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
   document.addEventListener('click', primeAudio, { once: true });
@@ -864,7 +839,6 @@
     playAlarm();
   }
 
-  // ---------- Live updates ----------
   function setupRealtime(){
     sb.channel('clients-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
@@ -883,7 +857,6 @@
       .subscribe();
   }
 
-  // ---------- Boot ----------
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await sb.auth.signOut();
     window.location.href = 'index.html';
