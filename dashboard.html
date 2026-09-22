@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinTrack — Ascend Advisory Group</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2B4C7E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1C1E26; --muted:#6B7180; --line:#E2E4E9; --bg:#F7F7F5;
+    --navy:#2B4C7E; --navy-dark:#1F3A61;
+    --green:#2F9E44; --green-bg:#EBFBEE;
+    --blue:#2F6FED; --blue-bg:#EDF3FF;
+    --red:#E03131; --red-bg:#FFF0F0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--ink);}
+  header{
+    background:var(--navy); color:#fff; padding:16px 28px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  header h1{font-size:16px; font-weight:600; margin:0;}
+  .who{display:flex; align-items:center; gap:14px; font-size:13px;}
+  .who .role{opacity:.75;}
+  .logout{
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); color:#fff;
+    padding:6px 12px; border-radius:6px; font-size:13px; cursor:pointer; font-family:inherit;
+  }
+  .logout:hover{background:rgba(255,255,255,.2);}
+  main{max-width:1040px; margin:0 auto; padding:28px;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:18px;}
+  .tabs button{
+    padding:8px 14px; border:1px solid var(--line); background:#fff; color:var(--muted);
+    border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+  }
+  .tabs button.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+  .toolbar{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  .toolbar input[type="text"]{
+    flex:1; min-width:180px; padding:10px 14px; border:1px solid var(--line);
+    border-radius:7px; font-size:14px; font-family:inherit; background:#fff;
+  }
+  .toolbar input:focus{outline:none; border-color:var(--navy);}
+  .toolbar button, .toolbar label.filebtn{
+    padding:10px 14px; border:1px solid var(--line); background:#fff; color:var(--ink);
+    border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .toolbar button:hover, .toolbar label.filebtn:hover{border-color:var(--navy); color:var(--navy);}
+  .toolbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
+  .toolbar .check{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); cursor:pointer;}
+  .toolbar input[type="file"]{display:none;}
+
+  .board{display:flex; gap:16px; align-items:flex-start;}
+  .column{flex:1; min-width:0; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .column-head{
+    padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center;
+    gap:8px; font-size:13px; font-weight:600;
+  }
+  .column-head .count{margin-left:auto; font-weight:500; color:var(--muted); font-size:12px;}
+  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; min-height:60px;}
+  .column-empty{padding:16px 6px; text-align:center; color:var(--muted); font-size:13px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
+
+  .card{border:1px solid var(--line); border-radius:7px; padding:10px 12px; background:#FCFCFB;}
+  .card-name{font-size:14px; font-weight:500; margin-bottom:4px; word-break:break-word; cursor:pointer;}
+  .card-name:hover{color:var(--navy); text-decoration:underline;}
+  .card-sub{font-size:12px; color:var(--muted); margin-bottom:8px;}
+  .card-row{display:flex; gap:6px; align-items:center;}
+  .card-row select{flex:1;}
+  .icon-btn{
+    border:1px solid var(--line); background:#fff; border-radius:6px; width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; flex-shrink:0;
+  }
+  .icon-btn:hover{border-color:var(--navy);}
+  select.status-select{
+    font-family:inherit; font-size:12px; font-weight:600; border-radius:20px; padding:5px 8px;
+    border:1px solid var(--line); cursor:pointer;
+  }
+
+  @media (max-width: 720px){ .board{flex-direction:column;} }
+
+  /* Overview (head) */
+  .stat-row{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
+  .stat-card{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px;}
+  .stat-card .num{font-size:26px; font-weight:700;}
+  .stat-card .label{font-size:12px; color:var(--muted); margin-top:2px;}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:18px;}
+  .panel h3{font-size:14px; font-weight:600; margin:0 0 12px;}
+  .panel table{width:100%; border-collapse:collapse; font-size:13px;}
+  .panel th{text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--line);}
+  .panel td{padding:7px 8px; border-bottom:1px solid #F0F0EE;}
+
+  /* Modals */
+  .modal-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(28,30,38,.4);
+    align-items:center; justify-content:center; padding:20px; z-index:10; overflow-y:auto;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{background:#fff; border-radius:10px; padding:24px; width:100%; max-width:400px; max-height:88vh; overflow-y:auto;}
+  .modal.wide{max-width:520px;}
+  .modal h2{font-size:16px; font-weight:600; margin:0 0 16px; display:flex; justify-content:space-between; align-items:center;}
+  .modal label{display:block; font-size:13px; font-weight:500; margin-bottom:6px; margin-top:12px;}
+  .modal label:first-of-type{margin-top:0;}
+  .modal input, .modal select, .modal textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px;
+    font-size:14px; font-family:inherit;
+  }
+  .modal textarea{resize:vertical; min-height:60px;}
+  .modal input:focus, .modal select:focus, .modal textarea:focus{outline:none; border-color:var(--navy);}
+  .modal-error{color:var(--red); font-size:12px; min-height:16px; margin-top:6px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+  .modal-actions button{padding:9px 16px; border-radius:7px; border:1px solid var(--line); background:#fff; cursor:pointer; font-family:inherit; font-size:13px;}
+  .modal-actions button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .modal-actions button.danger{background:var(--red); color:#fff; border-color:var(--red);}
+  .close-x{cursor:pointer; color:var(--muted); font-size:18px; line-height:1;}
+
+  .detail-meta{display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-bottom:16px;}
+  .detail-section{margin-top:18px;}
+  .detail-section h4{font-size:12px; text-transform:none; color:var(--muted); font-weight:600; margin:0 0 10px;}
+  .note-item{border-bottom:1px solid #F0F0EE; padding:8px 0; font-size:13px;}
+  .note-item .meta{font-size:11px; color:var(--muted); margin-bottom:3px;}
+  .history-item{font-size:12px; color:var(--muted); padding:5px 0; display:flex; gap:6px; align-items:center;}
+  .add-note-row{display:flex; gap:8px; margin-top:10px;}
+  .add-note-row textarea{flex:1;}
+  .add-note-row button{padding:0 14px; background:var(--navy); color:#fff; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px;}
+
+  /* Toasts + alerts */
+  .toast-stack{position:fixed; top:16px; right:16px; z-index:30; display:flex; flex-direction:column; gap:8px; max-width:320px;}
+  .toast{background:var(--ink); color:#fff; padding:11px 14px; border-radius:7px; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,.18); animation:slideIn .18s ease-out;}
+  @keyframes slideIn{from{transform:translateX(16px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+  .alert-stack{position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:30; display:flex; flex-direction:column; gap:8px; width:100%; max-width:440px; padding:0 16px;}
+  .alert{background:var(--red-bg); border:1px solid #FFC9C9; color:var(--ink); padding:12px 14px; border-radius:8px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,.1); animation:slideIn .18s ease-out;}
+  .alert .dot{background:var(--red);}
+  .alert-text{flex:1; font-size:13px; line-height:1.4;}
+  .alert-text b{font-weight:600;}
+  .alert button{flex-shrink:0; padding:7px 12px; background:var(--red); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;}
+</style>
+</head>
+<body>
+
+<div class="toast-stack" id="toastStack"></div>
+<div class="alert-stack" id="alertStack"></div>
+
+<header>
+  <h1>FinTrack <span style="opacity:.65; font-weight:400;">— Ascend Advisory Group</span></h1>
+  <div class="who">
+    <span id="userName">—</span>
+    <span class="role" id="userRole"></span>
+    <button class="logout" id="logoutBtn">Log out</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs" id="tabs" style="display:none;">
+    <button class="active" id="tabBoard">Board</button>
+    <button id="tabOverview">Overview</button>
+  </div>
+
+  <div id="boardView">
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Search client name...">
+      <label class="check"><input type="checkbox" id="myClientsToggle"> My clients only</label>
+      <button id="sortBtn">Sort A–Z ↕</button>
+      <button id="exportBtn">⬇ Export CSV</button>
+      <button class="primary" id="addBtn">+ Add client</button>
+    </div>
+    <div class="board" id="board"><div class="column-empty">Loading clients...</div></div>
+  </div>
+
+  <div id="overviewView" style="display:none;"></div>
+</main>
+
+<!-- Add/Edit client modal -->
+<div class="modal-backdrop" id="clientModalBackdrop">
+  <div class="modal">
+    <h2><span id="clientModalTitle">Add client</span><span class="close-x" id="closeClientModal">&times;</span></h2>
+
+    <div class="tabs" id="addModeTabs" style="margin-bottom:16px;">
+      <button class="active" id="modeSingle" type="button">Single client</button>
+      <button id="modeCsv" type="button">Import CSV</button>
+    </div>
+
+    <div id="singlePanel">
+      <label for="cName">Client name</label>
+      <input type="text" id="cName" placeholder="e.g. Meridian Holdings Pte Ltd">
+      <label for="cDueDate">Due date (optional)</label>
+      <input type="date" id="cDueDate">
+      <label for="cAssigned">Assigned to</label>
+      <select id="cAssigned"><option value="">Unassigned</option></select>
+      <div class="modal-error" id="clientModalError"></div>
+      <div class="modal-actions">
+        <button id="cancelClientModal">Cancel</button>
+        <button class="primary" id="saveClientBtn">Save</button>
+      </div>
+    </div>
+
+    <div id="csvPanel" style="display:none;">
+      <label for="csvFile">CSV file</label>
+      <input type="file" id="csvFile" accept=".csv">
+      <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
+        First row should be a header: <code>name,due_date</code> — due_date is optional (format YYYY-MM-DD).
+      </p>
+      <div class="modal-error" id="csvError"></div>
+      <div class="modal-actions">
+        <button id="cancelCsvModal">Cancel</button>
+        <button class="primary" id="importCsvBtn">Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Client detail modal -->
+<div class="modal-backdrop" id="detailBackdrop">
+  <div class="modal wide">
+    <h2><span id="detailName">Client</span><span class="close-x" id="closeDetail">&times;</span></h2>
+    <div class="detail-meta" id="detailMeta"></div>
+    <div class="modal-actions" style="margin-top:0; justify-content:flex-start;">
+      <button id="detailEditBtn">Edit details</button>
+      <button class="danger" id="detailDeleteBtn">Delete client</button>
+    </div>
+
+    <div class="detail-section">
+      <h4>Notes</h4>
+      <div id="notesList"></div>
+      <div class="add-note-row">
+        <textarea id="newNoteText" placeholder="Add a note..." rows="2"></textarea>
+        <button id="addNoteBtn">Add</button>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4>History</h4>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Fill these in from your Supabase project (Settings > API) ----
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  // ---------------------------------------------------------------
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let currentProfile = null;
+  let clients = [];
+  let profilesMap = {};   // id -> full_name
+  let staffList = [];     // [{id, full_name}]
+  let sortAsc = true;
+  let searchTerm = '';
+  let myClientsOnly = false;
+  let editingClientId = null;
+  let openDetailId = null;
+
+  const COLUMNS = [
+    { status: 'blue',  label: 'In Progress',     color: 'var(--blue)' },
+    { status: 'red',   label: 'Delayed 1 month', color: 'var(--red)' },
+    { status: 'green', label: 'Completed',       color: 'var(--green)' }
+  ];
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str ?? '';
+    return d.innerHTML;
+  }
+  function timeAgo(iso){
+    if (!iso) return '—';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+  function statusLabel(s){ return { green: 'Completed', blue: 'In Progress', red: 'Delayed 1 month' }[s] || s; }
+
+  // ---------- Board rendering ----------
+  const boardEl = document.getElementById('board');
+
+  function visibleClients(){
+    let rows = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (myClientsOnly) rows = rows.filter(c => c.assigned_to === currentUser.id);
+    rows.sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+    return rows;
+  }
+
+  function render(){
+    const rows = visibleClients();
+    boardEl.innerHTML = COLUMNS.map(col => {
+      const items = rows.filter(c => c.status === col.status);
+      const body = items.length ? items.map(cardHtml).join('') : `<div class="column-empty">No clients here.</div>`;
+      return `
+        <div class="column">
+          <div class="column-head"><span class="dot" style="background:${col.color}"></span>${col.label}<span class="count">${items.length}</span></div>
+          <div class="column-body">${body}</div>
+        </div>`;
+    }).join('');
+
+    document.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', onStatusChange));
+    document.querySelectorAll('.card-name').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.id)));
+    document.querySelectorAll('.edit-icon').forEach(el => el.addEventListener('click', () => openClientModal(el.dataset.id)));
+    document.querySelectorAll('.delete-icon').forEach(el => el.addEventListener('click', () => deleteClient(el.dataset.id)));
+  }
+
+  function cardHtml(c){
+    const due = c.due_date ? `Due ${c.due_date}` : '';
+    const who = c.assigned_to ? escapeHtml(profilesMap[c.assigned_to] || '—') : 'Unassigned';
+    return `
+      <div class="card">
+        <div class="card-name" data-id="${c.id}">${escapeHtml(c.name)}</div>
+        <div class="card-sub">${who}${due ? ' · ' + due : ''} · ${timeAgo(c.updated_at)}</div>
+        <div class="card-row">
+          <select class="status-select" data-id="${c.id}">
+            <option value="blue"  ${c.status==='blue' ?'selected':''}>🔵 In Progress</option>
+            <option value="red"   ${c.status==='red'  ?'selected':''}>🔴 Delayed 1 month</option>
+            <option value="green" ${c.status==='green'?'selected':''}>🟢 Completed</option>
+          </select>
+          <span class="icon-btn edit-icon" data-id="${c.id}" title="Edit">✎</span>
+          <span class="icon-btn delete-icon" data-id="${c.id}" title="Delete">🗑</span>
+        </div>
+      </div>`;
+  }
+
+  async function onStatusChange(e){
+    const id = e.target.dataset.id;
+    const newStatus = e.target.value;
+    e.target.disabled = true;
+    const { error } = await supabase.from('clients')
+      .update({ status: newStatus, updated_by: currentUser.id, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    e.target.disabled = false;
+    if (error) { alert('Could not update status: ' + error.message); return; }
+    await loadClients();
+  }
+
+  // ---------- Data loading ----------
+  async function loadProfiles(){
+    const { data, error } = await supabase.from('profiles').select('id, full_name, role');
+    if (error) return;
+    profilesMap = Object.fromEntries(data.map(p => [p.id, p.full_name]));
+    staffList = data;
+    const sel = document.getElementById('cAssigned');
+    sel.innerHTML = '<option value="">Unassigned</option>' +
+      data.map(p => `<option value="${p.id}">${escapeHtml(p.full_name)}</option>`).join('');
+  }
+
+  async function loadClients(){
+    const { data, error } = await supabase.from('clients').select('*');
+    if (error) {
+      boardEl.innerHTML = `<div class="column-empty">Could not load clients: ${escapeHtml(error.message)}</div>`;
+      return;
+    }
+    clients = data;
+    await checkOverdue();
+    render();
+    if (currentProfile?.role === 'head') renderOverview();
+  }
+
+  // Auto-flag anything past its due date that isn't already red or completed
+  async function checkOverdue(){
+    const today = new Date().toISOString().slice(0, 10);
+    const overdue = clients.filter(c => c.due_date && c.due_date < today && c.status === 'blue');
+    for (const c of overdue) {
+      c.status = 'red'; // reflect locally immediately
+      await supabase.from('clients')
+        .update({ status: 'red', updated_by: currentUser.id, updated_at: new Date().toISOString() })
+        .eq('id', c.id);
+    }
+  }
+
+  // ---------- Add / Edit client modal ----------
+  const clientModalBackdrop = document.getElementById('clientModalBackdrop');
+  function setAddMode(mode){
+    document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
+    document.getElementById('modeCsv').classList.toggle('active', mode === 'csv');
+    document.getElementById('singlePanel').style.display = mode === 'single' ? 'block' : 'none';
+    document.getElementById('csvPanel').style.display = mode === 'csv' ? 'block' : 'none';
+  }
+  document.getElementById('modeSingle').addEventListener('click', () => setAddMode('single'));
+  document.getElementById('modeCsv').addEventListener('click', () => setAddMode('csv'));
+
+  function openClientModal(id){
+    editingClientId = id || null;
+    document.getElementById('clientModalTitle').textContent = id ? 'Edit client' : 'Add client';
+    document.getElementById('clientModalError').textContent = '';
+    document.getElementById('csvError').textContent = '';
+    document.getElementById('addModeTabs').style.display = id ? 'none' : 'flex';
+    setAddMode('single');
+    if (id) {
+      const c = clients.find(x => x.id === id);
+      document.getElementById('cName').value = c.name;
+      document.getElementById('cDueDate').value = c.due_date || '';
+      document.getElementById('cAssigned').value = c.assigned_to || '';
+    } else {
+      document.getElementById('cName').value = '';
+      document.getElementById('cDueDate').value = '';
+      document.getElementById('cAssigned').value = '';
+      document.getElementById('csvFile').value = '';
+    }
+    clientModalBackdrop.classList.add('open');
+    document.getElementById('cName').focus();
+  }
+  function closeClientModal(){ clientModalBackdrop.classList.remove('open'); }
+  document.getElementById('addBtn').addEventListener('click', () => openClientModal(null));
+  document.getElementById('cancelClientModal').addEventListener('click', closeClientModal);
+  document.getElementById('cancelCsvModal').addEventListener('click', closeClientModal);
+  document.getElementById('closeClientModal').addEventListener('click', closeClientModal);
+  clientModalBackdrop.addEventListener('click', (e) => { if (e.target === clientModalBackdrop) closeClientModal(); });
+
+  document.getElementById('saveClientBtn').addEventListener('click', async () => {
+    const name = document.getElementById('cName').value.trim();
+    const due_date = document.getElementById('cDueDate').value || null;
+    const assigned_to = document.getElementById('cAssigned').value || null;
+    const errEl = document.getElementById('clientModalError');
+    if (!name) { errEl.textContent = 'Enter a client name.'; return; }
+
+    const btn = document.getElementById('saveClientBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    let error;
+    if (editingClientId) {
+      ({ error } = await supabase.from('clients')
+        .update({ name, due_date, assigned_to, updated_by: currentUser.id, updated_at: new Date().toISOString() })
+        .eq('id', editingClientId));
+    } else {
+      ({ error } = await supabase.from('clients')
+        .insert({ name, due_date, assigned_to, status: 'blue', updated_by: currentUser.id, updated_at: new Date().toISOString() }));
+    }
+
+    btn.disabled = false; btn.textContent = 'Save';
+    if (error) { errEl.textContent = 'Could not save: ' + error.message; return; }
+    closeClientModal();
+    await loadClients();
+  });
+
+  async function deleteClient(id){
+    const c = clients.find(x => x.id === id);
+    if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) { alert('Could not delete: ' + error.message); return; }
+    closeDetailModal();
+    await loadClients();
+  }
+
+  // ---------- Client detail modal (notes + history) ----------
+  const detailBackdrop = document.getElementById('detailBackdrop');
+  async function openDetail(id){
+    openDetailId = id;
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('detailName').textContent = c.name;
+    document.getElementById('detailMeta').innerHTML = `
+      <span>${statusLabel(c.status)}</span>
+      <span>${c.due_date ? 'Due ' + c.due_date : 'No due date'}</span>
+      <span>${c.assigned_to ? escapeHtml(profilesMap[c.assigned_to] || '—') : 'Unassigned'}</span>
+    `;
+    document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); openClientModal(id); };
+    document.getElementById('detailDeleteBtn').onclick = () => deleteClient(id);
+    detailBackdrop.classList.add('open');
+    await loadNotes(id);
+    await loadHistory(id);
+  }
+  function closeDetailModal(){ detailBackdrop.classList.remove('open'); openDetailId = null; }
+  document.getElementById('closeDetail').addEventListener('click', closeDetailModal);
+  detailBackdrop.addEventListener('click', (e) => { if (e.target === detailBackdrop) closeDetailModal(); });
+
+  async function loadNotes(clientId){
+    const { data } = await supabase.from('client_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false });
+    const list = document.getElementById('notesList');
+    if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No notes yet.</div>`; return; }
+    list.innerHTML = data.map(n => `
+      <div class="note-item">
+        <div class="meta">${escapeHtml(profilesMap[n.author_id] || 'Unknown')} · ${timeAgo(n.created_at)}</div>
+        ${escapeHtml(n.body)}
+      </div>`).join('');
+  }
+
+  async function loadHistory(clientId){
+    const { data } = await supabase.from('status_history').select('*').eq('client_id', clientId).order('changed_at', { ascending: false });
+    const list = document.getElementById('historyList');
+    if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No history yet.</div>`; return; }
+    list.innerHTML = data.map(h => `
+      <div class="history-item">
+        ${h.old_status ? statusLabel(h.old_status) + ' → ' : 'Created as '}${statusLabel(h.new_status)}
+        by ${escapeHtml(profilesMap[h.changed_by] || 'Unknown')} · ${timeAgo(h.changed_at)}
+      </div>`).join('');
+  }
+
+  document.getElementById('addNoteBtn').addEventListener('click', async () => {
+    const textEl = document.getElementById('newNoteText');
+    const body = textEl.value.trim();
+    if (!body || !openDetailId) return;
+    const btn = document.getElementById('addNoteBtn');
+    btn.disabled = true;
+    const { error } = await supabase.from('client_notes').insert({ client_id: openDetailId, author_id: currentUser.id, body });
+    btn.disabled = false;
+    if (error) { alert('Could not add note: ' + error.message); return; }
+    textEl.value = '';
+    await loadNotes(openDetailId);
+  });
+
+  // ---------- Toolbar: search, sort, my clients ----------
+  document.getElementById('searchInput').addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
+  document.getElementById('sortBtn').addEventListener('click', () => {
+    sortAsc = !sortAsc;
+    document.getElementById('sortBtn').textContent = sortAsc ? 'Sort A–Z ↕' : 'Sort Z–A ↕';
+    render();
+  });
+  document.getElementById('myClientsToggle').addEventListener('change', (e) => { myClientsOnly = e.target.checked; render(); });
+
+  // ---------- CSV import ----------
+  document.getElementById('importCsvBtn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('csvFile');
+    const errEl = document.getElementById('csvError');
+    errEl.textContent = '';
+    const file = fileInput.files[0];
+    if (!file) { errEl.textContent = 'Choose a CSV file first.'; return; }
+
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) { errEl.textContent = 'CSV needs a header row (name,due_date) plus at least one client.'; return; }
+    const rows = lines.slice(1).map(line => {
+      const [name, due_date] = line.split(',').map(s => (s || '').trim());
+      return name ? { name, due_date: due_date || null, status: 'blue', updated_by: currentUser.id, updated_at: new Date().toISOString() } : null;
+    }).filter(Boolean);
+    if (rows.length === 0) { errEl.textContent = 'No valid rows found.'; return; }
+
+    const btn = document.getElementById('importCsvBtn');
+    btn.disabled = true; btn.textContent = 'Importing...';
+    const { error } = await supabase.from('clients').insert(rows);
+    btn.disabled = false; btn.textContent = 'Import';
+
+    if (error) { errEl.textContent = 'Import failed: ' + error.message; return; }
+    showToast(`Imported ${rows.length} client${rows.length > 1 ? 's' : ''}.`);
+    closeClientModal();
+    await loadClients();
+  });
+
+  // ---------- CSV export ----------
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const rows = visibleClients();
+    const header = 'Name,Status,Due Date,Assigned To,Last Updated,Updated By\n';
+    const body = rows.map(c => [
+      c.name, statusLabel(c.status), c.due_date || '', profilesMap[c.assigned_to] || '',
+      c.updated_at || '', profilesMap[c.updated_by] || ''
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([header + body], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `fintrack-clients-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  });
+
+  // ---------- Overview tab (head of department only) ----------
+  document.getElementById('tabBoard').addEventListener('click', () => switchTab('board'));
+  document.getElementById('tabOverview').addEventListener('click', () => switchTab('overview'));
+  function switchTab(tab){
+    document.getElementById('boardView').style.display = tab === 'board' ? 'block' : 'none';
+    document.getElementById('overviewView').style.display = tab === 'overview' ? 'block' : 'none';
+    document.getElementById('tabBoard').classList.toggle('active', tab === 'board');
+    document.getElementById('tabOverview').classList.toggle('active', tab === 'overview');
+  }
+
+  function renderOverview(){
+    const counts = { blue: 0, red: 0, green: 0 };
+    clients.forEach(c => counts[c.status]++);
+
+    const oldestRed = clients.filter(c => c.status === 'red')
+      .sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at)).slice(0, 8);
+
+    const workload = staffList.map(p => {
+      const assigned = clients.filter(c => c.assigned_to === p.id);
+      return { name: p.full_name, total: assigned.length, red: assigned.filter(c => c.status === 'red').length };
+    }).sort((a, b) => b.red - a.red || b.total - a.total);
+
+    document.getElementById('overviewView').innerHTML = `
+      <div class="stat-row">
+        <div class="stat-card"><div class="num" style="color:var(--blue)">${counts.blue}</div><div class="label">In Progress</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--red)">${counts.red}</div><div class="label">Delayed 1 month</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--green)">${counts.green}</div><div class="label">Completed</div></div>
+      </div>
+      <div class="panel">
+        <h3>Longest-delayed clients</h3>
+        ${oldestRed.length ? `<table><tr><th>Client</th><th>Delayed since</th><th>Assigned to</th></tr>
+          ${oldestRed.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${timeAgo(c.updated_at)}</td><td>${escapeHtml(profilesMap[c.assigned_to] || 'Unassigned')}</td></tr>`).join('')}
+        </table>` : '<div class="column-empty">No delayed clients right now.</div>'}
+      </div>
+      <div class="panel">
+        <h3>Staff workload</h3>
+        <table><tr><th>Staff</th><th>Assigned clients</th><th>Delayed</th></tr>
+          ${workload.map(w => `<tr><td>${escapeHtml(w.name)}</td><td>${w.total}</td><td style="color:${w.red ? 'var(--red)' : 'inherit'}">${w.red}</td></tr>`).join('')}
+        </table>
+      </div>`;
+  }
+
+  // ---------- Toasts ----------
+  function showToast(message){
+    const stack = document.getElementById('toastStack');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    stack.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+
+  // ---------- Alarm sound ----------
+  let audioCtx = null;
+  function primeAudio(){ if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  document.addEventListener('click', primeAudio, { once: true });
+  function playAlarm(){
+    try {
+      primeAudio();
+      const now = audioCtx.currentTime;
+      [880, 660].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.16);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now + i * 0.18); osc.stop(now + i * 0.18 + 0.18);
+      });
+    } catch (e) {}
+  }
+  function showRedAlert(client){
+    const stack = document.getElementById('alertStack');
+    const el = document.createElement('div');
+    el.className = 'alert';
+    el.innerHTML = `<span class="dot"></span><span class="alert-text"><b>${escapeHtml(client.name)}</b> just moved to Delayed 1 month.</span><button>Got it</button>`;
+    el.querySelector('button').addEventListener('click', () => el.remove());
+    stack.appendChild(el);
+    playAlarm();
+  }
+
+  // ---------- Live updates ----------
+  function setupRealtime(){
+    supabase.channel('clients-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
+        showToast(`New client added: ${payload.new.name}`);
+        loadClients();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, (payload) => {
+        loadClients();
+        if (payload.new.status === 'red' && payload.old.status !== 'red') showRedAlert(payload.new);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' }, () => loadClients())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_notes' }, (payload) => {
+        if (openDetailId === payload.new.client_id) loadNotes(openDetailId);
+      })
+      .subscribe();
+  }
+
+  // ---------- Boot ----------
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+
+    const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', currentUser.id).single();
+    if (!profile || !['staff', 'head'].includes(profile.role)) {
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+      return;
+    }
+    currentProfile = profile;
+    document.getElementById('userName').textContent = profile.full_name;
+    document.getElementById('userRole').textContent = profile.role === 'head' ? 'Head of Department' : 'Staff';
+    if (profile.role === 'head') document.getElementById('tabs').style.display = 'flex';
+
+    showToast(`Welcome, ${profile.full_name}! 👋`);
+    setupRealtime();
+
+    await loadProfiles();
+    await loadClients();
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  })();
+</script>
+</body>
+</html>

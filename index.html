@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinTrack — Ascend Advisory Group</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2B4C7E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1C1E26; --muted:#6B7180; --line:#E2E4E9; --bg:#F7F7F5;
+    --navy:#2B4C7E; --navy-dark:#1F3A61; --red:#E03131;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--ink);
+    padding:24px;
+  }
+  .card{
+    width:100%; max-width:380px; background:#fff; border:1px solid var(--line);
+    border-radius:10px; padding:36px 32px;
+  }
+  .mark{
+    width:36px; height:36px; border-radius:8px; background:var(--navy);
+    display:flex; align-items:center; justify-content:center; margin-bottom:20px;
+  }
+  .mark span{width:10px;height:10px;border-radius:50%;background:#fff;}
+  h1{font-size:20px; font-weight:600; margin:0 0 4px;}
+  p.sub{color:var(--muted); font-size:14px; margin:0 0 28px;}
+  label{display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--ink);}
+  input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px;
+    font-size:14px; font-family:inherit; margin-bottom:16px; background:#fcfcfb;
+  }
+  input:focus{outline:none; border-color:var(--navy);}
+  button{
+    width:100%; padding:11px; background:var(--navy); color:#fff; border:none;
+    border-radius:7px; font-size:14px; font-weight:600; font-family:inherit;
+    cursor:pointer; margin-top:6px;
+  }
+  button:hover{background:var(--navy-dark);}
+  button:disabled{opacity:.6; cursor:default;}
+  .error{
+    background:#FFF0F0; border:1px solid #FFC9C9; color:var(--red);
+    font-size:13px; padding:10px 12px; border-radius:7px; margin-bottom:16px; display:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="mark"><span></span></div>
+  <h1>FinTrack</h1>
+  <p class="sub">Ascend Advisory Group — sign in with your staff account.</p>
+
+  <div class="error" id="errorBox"></div>
+
+  <form id="loginForm">
+    <label for="staffId">Staff ID</label>
+    <input type="text" id="staffId" required autocomplete="username" placeholder="e.g. ST1023">
+    <label for="password">Password</label>
+    <input type="password" id="password" required autocomplete="current-password">
+    <button type="submit" id="submitBtn">Sign in</button>
+  </form>
+</div>
+
+<script>
+  // ---- Fill these in from your Supabase project (Settings > API) ----
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  // ---------------------------------------------------------------
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const STAFF_EMAIL_DOMAIN = "ascend-fintrack.local"; // internal only, never actually emailed
+
+  const form = document.getElementById('loginForm');
+  const errorBox = document.getElementById('errorBox');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function showError(msg){
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+
+  // If already logged in and authorized, skip straight to dashboard
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) window.location.href = 'dashboard.html';
+  })();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+
+    const staffId = document.getElementById('staffId').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const email = `${staffId}@${STAFF_EMAIL_DOMAIN}`;
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError('Incorrect Staff ID or password.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in';
+      return;
+    }
+
+    // Confirm this account belongs to staff or the head of department
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile || !['staff', 'head'].includes(profile.role)) {
+      await supabase.auth.signOut();
+      showError('This account is not authorized to access the finance client tracker.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign in';
+      return;
+    }
+
+    window.location.href = 'dashboard.html';
+  });
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
