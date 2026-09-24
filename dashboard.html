@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FinTrack — Ascend Advisory Group</title>
+<title>TaxBase — Ascend Advisory Group</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2B4C7E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +62,7 @@
   .nav-sidebar.collapsed .nav-label{display:none;}
   .nav-item .nav-icon{font-size:15px; flex-shrink:0;}
 
-  /* ---- Folder-style status tabs (All / In Progress / Delayed / Completed / Bin) ---- */
+  /* ---- Folder-style status tabs (All / Pending / Overdue / Completed / Bin) ---- */
   .folder-tabs{display:flex; gap:4px; align-items:flex-end; flex-wrap:wrap;}
   .folder-tab{
     padding:9px 16px 8px; border:1px solid var(--line); border-bottom:none;
@@ -224,7 +224,7 @@
 <div class="alert-stack" id="alertStack"></div>
 
 <header>
-  <h1>FinTrack <span style="opacity:.65; font-weight:400;">— Ascend Advisory Group</span></h1>
+  <h1>TaxBase <span style="opacity:.65; font-weight:400;">— Ascend Advisory Group</span></h1>
   <div class="who">
     <span id="userName">—</span>
     <span class="role" id="userRole"></span>
@@ -387,7 +387,7 @@
     if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
     return Math.floor(diff / 86400) + 'd ago';
   }
-  function statusLabel(s){ return { green: 'Completed', blue: 'In Progress', red: 'Delayed 1 month' }[s] || s; }
+  function statusLabel(s){ return { green: 'COMPLETED', blue: 'PENDING', red: 'OVERDUE' }[s] || s; }
 
   function baseFiltered(){
     let rows = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -408,14 +408,14 @@
     rows.forEach(c => { counts[c.status] = (counts[c.status] || 0) + 1; });
     const tabs = [
       { key: 'all',   label: 'All',               cls: 'all'   },
-      { key: 'blue',  label: 'In Progress',        cls: 'blue'  },
-      { key: 'red',   label: 'Delayed 1 month',    cls: 'red'   },
-      { key: 'green', label: 'Completed',          cls: 'green' },
+      { key: 'blue',  label: 'PENDING',            cls: 'blue'  },
+      { key: 'red',   label: 'OVERDUE',            cls: 'red'   },
+      { key: 'green', label: 'COMPLETED',          cls: 'green' },
       { key: 'bin',   label: '🗑 Bin',             cls: 'bin'   }
     ];
     document.getElementById('filterTabs').innerHTML = tabs.map(t => `
       <button type="button" class="folder-tab ${t.cls} ${statusFilter === t.key ? 'active' : ''}" data-key="${t.key}">
-        ${t.label}<span class="count">${counts[t.key] || 0}</span>
+        ${t.label}<span class="count">(${counts[t.key] || 0})</span>
       </button>`).join('');
     document.querySelectorAll('.folder-tab').forEach(btn => btn.addEventListener('click', () => {
       statusFilter = btn.dataset.key;
@@ -479,9 +479,9 @@
         <td class="muted-cell">${due}</td>
         <td>
           <select class="status-pill ${c.status}" data-id="${c.id}">
-            <option value="blue"  ${c.status==='blue' ?'selected':''}>In Progress</option>
-            <option value="red"   ${c.status==='red'  ?'selected':''}>Delayed 1 month</option>
-            <option value="green" ${c.status==='green'?'selected':''}>Completed</option>
+            <option value="blue"  ${c.status==='blue' ?'selected':''}>PENDING</option>
+            <option value="red"   ${c.status==='red'  ?'selected':''}>OVERDUE</option>
+            <option value="green" ${c.status==='green'?'selected':''}>COMPLETED</option>
           </select>
         </td>
         <td class="muted-cell">${timeAgo(c.updated_at)}</td>
@@ -743,7 +743,7 @@
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Clients');
-    XLSX.writeFile(wb, `fintrack-clients-${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `taxbase-clients-${new Date().toISOString().slice(0,10)}.xlsx`);
   });
 
   document.getElementById('importExcelBtn').addEventListener('click', async () => {
@@ -818,9 +818,9 @@
 
     document.getElementById('overviewView').innerHTML = `
       <div class="stat-row">
-        <div class="stat-card"><div class="num" style="color:var(--blue)">${counts.blue}</div><div class="label">In Progress</div></div>
-        <div class="stat-card"><div class="num" style="color:var(--red)">${counts.red}</div><div class="label">Delayed 1 month</div></div>
-        <div class="stat-card"><div class="num" style="color:var(--green)">${counts.green}</div><div class="label">Completed</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--blue)">${counts.blue}</div><div class="label">PENDING</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--red)">${counts.red}</div><div class="label">OVERDUE</div></div>
+        <div class="stat-card"><div class="num" style="color:var(--green)">${counts.green}</div><div class="label">COMPLETED</div></div>
       </div>
       <div class="panel">
         <h3>Longest-delayed clients</h3>
@@ -868,7 +868,7 @@
     const stack = document.getElementById('alertStack');
     const el = document.createElement('div');
     el.className = 'alert';
-    el.innerHTML = `<span class="dot"></span><span class="alert-text"><b>${escapeHtml(client.name)}</b> just moved to Delayed 1 month.</span><button>Got it</button>`;
+    el.innerHTML = `<span class="dot"></span><span class="alert-text"><b>${escapeHtml(client.name)}</b> just moved to Overdue.</span><button>Got it</button>`;
     el.querySelector('button').addEventListener('click', () => el.remove());
     stack.appendChild(el);
     playAlarm();
