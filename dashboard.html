@@ -38,7 +38,7 @@
   .app-body{flex:1; display:flex; align-items:stretch; min-height:0;}
   main{flex:1; min-width:0; padding:28px;}
 
-  /* ---- Nav sidebar: Board / Overview, full-height dark rail, collapsible ---- */
+  /* ---- Nav sidebar ---- */
   .nav-sidebar{
     width:190px; flex-shrink:0; background:var(--navy-dark); padding:18px 10px;
     display:flex; flex-direction:column; position:sticky; top:0; align-self:flex-start;
@@ -62,96 +62,6 @@
   .nav-sidebar.collapsed .nav-label{display:none;}
   .nav-item .nav-icon{font-size:15px; flex-shrink:0;}
 
-  /* ---- Folder-style status tabs (All / Pending / Overdue / Completed / Bin) ---- */
-  .folder-tabs{display:flex; gap:4px; align-items:flex-end; flex-wrap:wrap;}
-  .folder-tab{
-    padding:9px 16px 8px; border:1px solid var(--line); border-bottom:none;
-    border-radius:10px 10px 0 0; background:#EEF0F3; color:var(--muted);
-    font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
-    position:relative; top:1px; transition:background .12s, color .12s;
-  }
-  .folder-tab:hover{background:#E4E7EC;}
-  .folder-tab .count{font-weight:700; margin-left:5px; opacity:.7;}
-  .folder-tab.active{background:#fff; top:0; z-index:2; color:var(--ink);}
-  .folder-tab.active.blue{color:var(--blue);}
-  .folder-tab.active.red{color:var(--red);}
-  .folder-tab.active.green{color:var(--green);}
-  .folder-tab.active.bin{color:var(--ink);}
-
-  .tabs{display:flex; gap:6px; margin-bottom:18px;}
-  .tabs button{
-    padding:8px 14px; border:1px solid var(--line); background:#fff; color:var(--muted);
-    border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
-  }
-  .tabs button.active{background:var(--navy); color:#fff; border-color:var(--navy);}
-
-  /* Admin doesn't get "My clients only" — that's a staff-only filter */
-  body.admin-view #myClientsLabel{display:none;}
-
-  .toolbar{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
-  .toolbar input[type="text"]{
-    flex:1; min-width:180px; padding:10px 14px; border:1px solid var(--line);
-    border-radius:7px; font-size:14px; font-family:inherit; background:#fff;
-  }
-  .toolbar input:focus{outline:none; border-color:var(--navy);}
-  .toolbar button, .toolbar label.filebtn{
-    padding:10px 14px; border:1px solid var(--line); background:#fff; color:var(--ink);
-    border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
-    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
-  }
-  .toolbar button:hover, .toolbar label.filebtn:hover{border-color:var(--navy); color:var(--navy);}
-  .toolbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
-  .toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
-  .toolbar .check{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); cursor:pointer;}
-
-  .popover{position:relative; display:inline-block;}
-  .popover-menu{
-    position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:1px solid var(--line);
-    border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:12px; z-index:20; display:none; width:230px;
-  }
-  .popover-menu.open{display:block;}
-  .popover-menu .section-label{font-size:11px; color:var(--muted); font-weight:600; margin:0 0 6px; text-transform:uppercase; letter-spacing:.02em;}
-  .popover-menu .order-row{display:flex; gap:6px; margin-bottom:12px;}
-  .popover-menu button{
-    padding:6px 0; border:1px solid var(--line); background:#fff; border-radius:5px;
-    font-size:12px; cursor:pointer; font-family:inherit;
-  }
-  .popover-menu button:hover{border-color:var(--navy); color:var(--navy);}
-  .popover-menu button.active{background:var(--navy); color:#fff; border-color:var(--navy);}
-  .popover-menu .order-row button{flex:1;}
-  .letter-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:4px;}
-  .letter-grid button.all-letters{grid-column:1/-1; margin-bottom:4px;}
-
-  .table-wrap{background:#fff; border:1px solid var(--line); border-radius:8px; overflow-x:auto;}
-  .client-table{width:100%; border-collapse:collapse; font-size:13px;}
-  .client-table thead th{
-    text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:11px 14px;
-    border-bottom:1px solid var(--line); background:#FAFAF8; white-space:nowrap;
-  }
-  .client-table tbody td{padding:11px 14px; border-bottom:1px solid #F0F0EE; vertical-align:middle; white-space:nowrap;}
-  .client-table tbody tr:last-child td{border-bottom:none;}
-  .client-table tbody tr:hover{background:#FAFAF8;}
-  .client-name-link{font-weight:600; cursor:pointer;}
-  .client-name-link:hover{color:var(--navy); text-decoration:underline;}
-  .muted-cell{color:var(--muted);}
-  .row-actions{display:flex; gap:6px;}
-  .icon-btn{
-    border:1px solid var(--line); background:#fff; border-radius:6px; width:28px; height:28px;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; flex-shrink:0;
-  }
-  .icon-btn:hover{border-color:var(--navy);}
-  .status-pill{
-    font-family:inherit; font-size:12px; font-weight:700; border-radius:20px; padding:7px 14px;
-    border:2px solid transparent; cursor:pointer; appearance:none; -webkit-appearance:none;
-  }
-  .status-pill.blue{background:var(--blue-bg); color:var(--blue);}
-  .status-pill.red{background:var(--red-bg); color:var(--red);}
-  .status-pill.green{background:var(--green-bg); color:var(--green);}
-  .column-empty{padding:22px 6px; text-align:center; color:var(--muted); font-size:13px; white-space:normal;}
-
-  body.staff-view .actions-col,
-  body.staff-view #modeExcelBtn{ display:none !important; }
-
   @media (max-width: 860px){
     .app-body{flex-direction:column;}
     .nav-sidebar{
@@ -164,23 +74,54 @@
     main{order:2; width:100%; padding:18px;}
   }
 
-  .stat-row{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
-  .stat-card{flex:1; min-width:140px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px;}
-  .stat-card .num{font-size:26px; font-weight:700;}
-  .stat-card .label{font-size:12px; color:var(--muted); margin-top:2px;}
-  .panel{background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:18px;}
-  .panel h3{font-size:14px; font-weight:600; margin:0 0 12px;}
-  .panel table{width:100%; border-collapse:collapse; font-size:13px;}
-  .panel th{text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--line);}
-  .panel td{padding:7px 8px; border-bottom:1px solid #F0F0EE;}
+  /* ---- Dashboard search bar ---- */
+  .dash-search-wrap{position:relative; max-width:420px; margin-bottom:22px;}
+  .dash-search-wrap input{
+    width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:8px;
+    font-size:14px; font-family:inherit; background:#fff;
+  }
+  .dash-search-wrap input:focus{outline:none; border-color:var(--navy);}
+  .dash-search-results{
+    display:none; position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
+    border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.14);
+    z-index:25; max-height:320px; overflow-y:auto;
+  }
+  .dash-search-results.open{display:block;}
+  .dash-search-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px;
+    cursor:pointer; border-bottom:1px solid #F0F0EE; font-size:13px;
+  }
+  .dash-search-item:last-child{border-bottom:none;}
+  .dash-search-item:hover{background:#FAFAF8;}
+  .dash-search-item .sname{font-weight:600;}
+  .dash-search-item .sform{
+    font-size:11px; font-weight:700; color:var(--navy); background:var(--blue-bg);
+    padding:3px 8px; border-radius:20px; flex-shrink:0;
+  }
+  .dash-search-item .sdue{color:var(--muted); font-size:12px; flex-shrink:0;}
+  .dash-search-empty{padding:14px; font-size:13px; color:var(--muted); text-align:center;}
 
+  /* ---- Widget cards (sortable) ---- */
+  .widget-grid{display:flex; gap:14px; flex-wrap:wrap;}
+  .widget-card{
+    flex:1; min-width:200px; max-width:280px; background:#fff; border:1px solid var(--line);
+    border-radius:10px; padding:18px 20px; cursor:pointer; user-select:none;
+    transition:box-shadow .12s, border-color .12s, opacity .12s;
+  }
+  .widget-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.07); border-color:#D3D7DE;}
+  .widget-card.dragging{opacity:.4;}
+  .widget-card .widget-label{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.03em;}
+  .widget-card .widget-num{font-size:30px; font-weight:700; margin-top:10px; color:var(--ink);}
+
+  /* ---- Modals (shared) ---- */
   .modal-backdrop{
     display:none; position:fixed; inset:0; background:rgba(28,30,38,.4);
     align-items:center; justify-content:center; padding:20px; z-index:40; overflow-y:auto;
   }
   .modal-backdrop.open{display:flex;}
   .modal{background:#fff; border-radius:10px; padding:24px; width:100%; max-width:400px; max-height:88vh; overflow-y:auto;}
-  .modal.wide{max-width:520px;}
+  .modal.wide{max-width:420px;}
+  .modal.xwide{max-width:780px;}
   .modal h2{font-size:16px; font-weight:600; margin:0 0 16px; display:flex; justify-content:space-between; align-items:center;}
   .modal label{display:block; font-size:13px; font-weight:500; margin-bottom:6px; margin-top:12px;}
   .modal label:first-of-type{margin-top:0;}
@@ -188,7 +129,7 @@
     width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px;
     font-size:14px; font-family:inherit;
   }
-  .modal textarea{resize:vertical; min-height:60px;}
+  .modal textarea{resize:vertical; min-height:60px; font-family:inherit;}
   .modal input:focus, .modal select:focus, .modal textarea:focus{outline:none; border-color:var(--navy);}
   .modal-error{color:var(--red); font-size:12px; min-height:16px; margin-top:6px;}
   .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
@@ -196,32 +137,67 @@
   .modal-actions button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
   .modal-actions button.danger{background:var(--red); color:#fff; border-color:var(--red);}
   .close-x{cursor:pointer; color:var(--muted); font-size:18px; line-height:1;}
+  .modal-sub{font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 4px;}
 
-  .detail-meta{display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-bottom:16px;}
-  .detail-section{margin-top:18px;}
-  .detail-section h4{font-size:12px; text-transform:none; color:var(--muted); font-weight:600; margin:0 0 10px;}
-  .note-item{border-bottom:1px solid #F0F0EE; padding:8px 0; font-size:13px;}
-  .note-item .meta{font-size:11px; color:var(--muted); margin-bottom:3px;}
-  .history-item{font-size:12px; color:var(--muted); padding:5px 0; display:flex; gap:6px; align-items:center;}
-  .add-note-row{display:flex; gap:8px; margin-top:10px;}
-  .add-note-row textarea{flex:1;}
-  .add-note-row button{padding:0 14px; background:var(--navy); color:#fff; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px;}
+  /* ---- Form list modal ---- */
+  .list-toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .list-toolbar input[type="text"]{
+    flex:1; min-width:160px; padding:9px 12px; border:1px solid var(--line);
+    border-radius:7px; font-size:13px; font-family:inherit;
+  }
+  .list-toolbar input:focus{outline:none; border-color:var(--navy);}
+  .list-toolbar button{
+    padding:9px 13px; border:1px solid var(--line); background:#fff; color:var(--ink);
+    border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+    white-space:nowrap;
+  }
+  .list-toolbar button:hover{border-color:var(--navy); color:var(--navy);}
+  .list-toolbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .list-toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
+
+  .list-table-wrap{border:1px solid var(--line); border-radius:8px; overflow-x:auto;}
+  .list-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .list-table thead th{
+    text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:10px 14px;
+    border-bottom:1px solid var(--line); background:#FAFAF8; white-space:nowrap;
+  }
+  .list-table tbody td{padding:12px 14px; border-bottom:1px solid #F0F0EE; vertical-align:top;}
+  .list-table tbody tr:last-child td{border-bottom:none;}
+  .company-cell{font-weight:600; white-space:nowrap;}
+  .due-cell{color:var(--muted); white-space:nowrap;}
+  .remarks-cell{min-width:260px;}
+  .empty-state{padding:26px 6px; text-align:center; color:var(--muted); font-size:13px;}
+
+  .remarks-list{display:flex; flex-direction:column; gap:8px; margin-bottom:8px;}
+  .remark-item{background:var(--grey-bg); border-radius:7px; padding:9px 11px;}
+  .remark-text{
+    font-style:italic; font-size:13.5px; line-height:1.6; color:var(--ink); white-space:pre-wrap; word-break:break-word;
+  }
+  .remark-meta{font-style:normal; font-size:11px; color:var(--muted); margin-top:5px;}
+  .no-remarks{font-size:12px; color:var(--muted); margin-bottom:8px;}
+
+  .add-remark-btn{
+    width:24px; height:24px; border-radius:50%; border:1px solid var(--line); background:#fff;
+    color:var(--navy); font-size:15px; line-height:1; cursor:pointer; display:inline-flex;
+    align-items:center; justify-content:center; font-family:inherit; font-weight:700;
+  }
+  .add-remark-btn:hover{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+  .remark-compose{margin-top:8px; display:none;}
+  .remark-compose textarea{width:100%; font-size:13px; font-family:inherit; padding:8px 10px; border:1px solid var(--line); border-radius:6px; resize:vertical; min-height:50px;}
+  .remark-compose textarea:focus{outline:none; border-color:var(--navy);}
+  .remark-compose-actions{display:flex; justify-content:flex-end; gap:6px; margin-top:6px;}
+  .remark-compose-actions button{padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:#fff; font-size:12px; cursor:pointer; font-family:inherit;}
+  .remark-compose-actions button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
 
   .toast-stack{position:fixed; top:16px; right:16px; z-index:50; display:flex; flex-direction:column; gap:8px; max-width:320px;}
   .toast{background:var(--ink); color:#fff; padding:11px 14px; border-radius:7px; font-size:13px; box-shadow:0 4px 14px rgba(0,0,0,.18); animation:slideIn .18s ease-out;}
   @keyframes slideIn{from{transform:translateX(16px); opacity:0;} to{transform:translateX(0); opacity:1;}}
-  .alert-stack{position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:50; display:flex; flex-direction:column; gap:8px; width:100%; max-width:440px; padding:0 16px;}
-  .alert{background:var(--red-bg); border:1px solid #FFC9C9; color:var(--ink); padding:12px 14px; border-radius:8px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 14px rgba(0,0,0,.1); animation:slideIn .18s ease-out;}
-  .alert .dot{width:8px;height:8px;border-radius:50%;background:var(--red); flex-shrink:0;}
-  .alert-text{flex:1; font-size:13px; line-height:1.4;}
-  .alert-text b{font-weight:600;}
-  .alert button{flex-shrink:0; padding:7px 12px; background:var(--red); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;}
 </style>
 </head>
 <body>
 
 <div class="toast-stack" id="toastStack"></div>
-<div class="alert-stack" id="alertStack"></div>
 
 <header>
   <h1>TaxBase <span style="opacity:.65; font-weight:400;">— Ascend Advisory Group</span></h1>
@@ -236,117 +212,72 @@
 
   <aside class="nav-sidebar" id="navSidebar">
     <button class="nav-toggle" id="navToggle" title="Collapse sidebar">«</button>
-    <button class="nav-item active" id="tabBoard"><span class="nav-icon">📋</span><span class="nav-label">Board</span></button>
-    <button class="nav-item" id="tabOverview" style="display:none;"><span class="nav-icon">📊</span><span class="nav-label">Overview</span></button>
+    <button class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label">Dashboard</span></button>
   </aside>
 
   <main>
-    <div id="boardView">
-      <div class="folder-tabs" id="filterTabs"></div>
-
-      <div class="toolbar">
-        <input type="text" id="searchInput" placeholder="Search client name...">
-        <label class="check" id="myClientsLabel"><input type="checkbox" id="myClientsToggle"> My clients only</label>
-        <div class="popover">
-          <button id="sortBtn" type="button">Sort A–Z ↕</button>
-          <div class="popover-menu" id="sortMenu">
-            <div class="section-label">Order</div>
-            <div class="order-row">
-              <button id="ascBtn" type="button">A → Z</button>
-              <button id="descBtn" type="button">Z → A</button>
-            </div>
-            <div class="section-label">Jump to letter</div>
-            <div class="letter-grid" id="letterGrid"></div>
-          </div>
-        </div>
-        <button id="exportBtn">⬇ Export Excel</button>
-        <button class="primary" id="addBtn">+ Add client</button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="client-table">
-          <thead>
-            <tr>
-              <th>Client</th>
-              <th>Assigned to</th>
-              <th>Due date</th>
-              <th>Status</th>
-              <th>Last updated</th>
-              <th>Notes</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="clientsBody"><tr><td colspan="7" class="column-empty">Loading clients...</td></tr></tbody>
-        </table>
-      </div>
+    <div class="dash-search-wrap">
+      <input type="text" id="dashSearchInput" placeholder="Search company name...">
+      <div class="dash-search-results" id="dashSearchResults"></div>
     </div>
 
-    <div id="overviewView" style="display:none;"></div>
+    <div class="widget-grid" id="widgetGrid"></div>
   </main>
 
 </div>
 
-<div class="modal-backdrop" id="clientModalBackdrop">
-  <div class="modal">
-    <h2><span id="clientModalTitle">Add client</span><span class="close-x" id="closeClientModal">&times;</span></h2>
+<!-- Form list modal: shows entries for whichever widget was clicked -->
+<div class="modal-backdrop" id="listModalBackdrop">
+  <div class="modal xwide">
+    <h2><span id="listModalTitle">Form C</span><span class="close-x" id="closeListModal">&times;</span></h2>
 
-    <div class="tabs" id="addModeTabs" style="margin-bottom:16px;">
-      <button class="active" id="modeSingle" type="button">Single client</button>
-      <button id="modeExcelBtn" type="button">Import Excel</button>
+    <div class="list-toolbar">
+      <input type="text" id="listSearchInput" placeholder="Search company name...">
+      <button id="listExportBtn">⬇ Export Excel</button>
+      <button class="primary" id="listAddBtn">+ Add client</button>
     </div>
 
-    <div id="singlePanel">
-      <label for="cName">Client name</label>
-      <input type="text" id="cName" placeholder="e.g. Meridian Holdings Pte Ltd">
-      <label for="cDueDate">Due date (optional)</label>
-      <input type="date" id="cDueDate">
-      <label for="cAssigned">Assigned to</label>
-      <select id="cAssigned"><option value="">Unassigned</option></select>
-      <div class="modal-error" id="clientModalError"></div>
-      <div class="modal-actions">
-        <button id="cancelClientModal">Cancel</button>
-        <button class="primary" id="saveClientBtn">Save</button>
-      </div>
-    </div>
-
-    <div id="excelPanel" style="display:none;">
-      <label for="excelFile">Excel file (.xlsx)</label>
-      <input type="file" id="excelFile" accept=".xlsx,.xls">
-      <label for="excelAssigned">Assign all clients in this file to</label>
-      <select id="excelAssigned"><option value="">Unassigned</option></select>
-      <p style="font-size:12px; color:var(--muted); margin:10px 0 0;">
-        First row should be a header with columns <code>name</code> and <code>due_date</code> — due_date is optional (format YYYY-MM-DD).
-      </p>
-      <div class="modal-error" id="excelError"></div>
-      <div class="modal-actions">
-        <button id="cancelExcelModal">Cancel</button>
-        <button class="primary" id="importExcelBtn">Import</button>
-      </div>
+    <div class="list-table-wrap">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th style="width:22%;">Company Name</th>
+            <th style="width:14%;">Due Date</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="listTableBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<div class="modal-backdrop" id="detailBackdrop">
-  <div class="modal wide">
-    <h2><span id="detailName">Client</span><span class="close-x" id="closeDetail">&times;</span></h2>
-    <div class="detail-meta" id="detailMeta"></div>
-    <div class="modal-actions" style="margin-top:0; justify-content:flex-start;">
-      <button id="detailEditBtn">Edit details</button>
-      <button class="danger" id="detailDeleteBtn">Delete client</button>
+<!-- Add client modal -->
+<div class="modal-backdrop" id="entryModalBackdrop">
+  <div class="modal">
+    <h2><span id="entryModalTitle">Add client</span><span class="close-x" id="closeEntryModal">&times;</span></h2>
+    <label for="eCompanyName">Company name</label>
+    <input type="text" id="eCompanyName" placeholder="e.g. Meridian Holdings Sdn Bhd">
+    <label for="eDueDate">Due date</label>
+    <input type="date" id="eDueDate">
+    <label for="eRemark">Remarks (optional)</label>
+    <textarea id="eRemark" rows="3" placeholder="Optional remark..."></textarea>
+    <div class="modal-error" id="entryModalError"></div>
+    <div class="modal-actions">
+      <button id="cancelEntryModal">Cancel</button>
+      <button class="primary" id="saveEntryBtn">Save</button>
     </div>
+  </div>
+</div>
 
-    <div class="detail-section">
-      <h4>Notes</h4>
-      <div id="notesList"></div>
-      <div class="add-note-row">
-        <textarea id="newNoteText" placeholder="Add a note..." rows="2"></textarea>
-        <button id="addNoteBtn">Add</button>
-      </div>
-    </div>
-
-    <div class="detail-section">
-      <h4>History</h4>
-      <div id="historyList"></div>
+<!-- Remark confirmation modal -->
+<div class="modal-backdrop" id="remarkConfirmBackdrop">
+  <div class="modal" style="max-width:360px;">
+    <h2>Add this remark?</h2>
+    <p class="modal-sub">Are you sure you want to add this remark? Remarks cannot be edited once added.</p>
+    <div class="modal-actions">
+      <button id="remarkCancelBtn">Cancel</button>
+      <button class="primary" id="remarkConfirmBtn">Confirm</button>
     </div>
   </div>
 </div>
@@ -359,19 +290,16 @@
 
   let currentUser = null;
   let currentProfile = null;
-  let clients = [];
-  let deletedClients = [];
   let profilesMap = {};
-  let staffList = [];
-  let sortAsc = true;
-  let searchTerm = '';
-  let myClientsOnly = false;
-  let statusFilter = 'all';
-  let letterFilter = null;
-  let editingClientId = null;
-  let openDetailId = null;
 
-  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const FORMS = [
+    { key: 'form_c',  label: 'Form C' },
+    { key: 'form_be', label: 'Form BE' }
+  ];
+  let formData = { form_c: [], form_be: [] };
+  let currentListFormType = null;
+  let pendingRemark = null; // { entryId, body }
+
   const isAdmin = () => currentProfile && currentProfile.role === 'head';
 
   function escapeHtml(str){
@@ -379,463 +307,23 @@
     d.textContent = str ?? '';
     return d.innerHTML;
   }
-  function timeAgo(iso){
-    if (!iso) return '—';
-    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-    return Math.floor(diff / 86400) + 'd ago';
+  function formatDateDMY(isoDate){
+    if (!isoDate) return '—';
+    const [y, m, d] = isoDate.split('-');
+    if (!y || !m || !d) return isoDate;
+    return `${d}-${m}-${y}`;
   }
-  function statusLabel(s){ return { green: 'COMPLETED', blue: 'PENDING', red: 'OVERDUE' }[s] || s; }
-
-  function baseFiltered(){
-    let rows = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (myClientsOnly) rows = rows.filter(c => c.assigned_to === currentUser.id);
-    if (letterFilter) rows = rows.filter(c => c.name.toUpperCase().startsWith(letterFilter));
-    return rows;
+  function formatTimeMeta(iso){
+    const dt = new Date(iso);
+    let h = dt.getHours();
+    const min = String(dt.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return `${h}:${min} ${ampm} on ${dd}-${mm}-${yyyy}`;
   }
-  function visibleClients(){
-    let rows = baseFiltered();
-    if (statusFilter !== 'all') rows = rows.filter(c => c.status === statusFilter);
-    rows.sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
-    return rows;
-  }
-
-  function renderFilterTabs(){
-    const rows = baseFiltered();
-    const counts = { all: rows.length, blue: 0, red: 0, green: 0, bin: deletedClients.length };
-    rows.forEach(c => { counts[c.status] = (counts[c.status] || 0) + 1; });
-    const tabs = [
-      { key: 'all',   label: 'All',               cls: 'all'   },
-      { key: 'blue',  label: 'PENDING',            cls: 'blue'  },
-      { key: 'red',   label: 'OVERDUE',            cls: 'red'   },
-      { key: 'green', label: 'COMPLETED',          cls: 'green' },
-      { key: 'bin',   label: '🗑 Bin',             cls: 'bin'   }
-    ];
-    document.getElementById('filterTabs').innerHTML = tabs.map(t => `
-      <button type="button" class="folder-tab ${t.cls} ${statusFilter === t.key ? 'active' : ''}" data-key="${t.key}">
-        ${t.label}<span class="count">(${counts[t.key] || 0})</span>
-      </button>`).join('');
-    document.querySelectorAll('.folder-tab').forEach(btn => btn.addEventListener('click', () => {
-      statusFilter = btn.dataset.key;
-      render();
-    }));
-  }
-
-  function binRows(){
-    let rows = deletedClients.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (letterFilter) rows = rows.filter(d => d.name.toUpperCase().startsWith(letterFilter));
-    rows.sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
-    return rows;
-  }
-
-  function binRowHtml(d){
-    const due = d.due_date ? d.due_date : '—';
-    const who = d.assigned_to ? escapeHtml(profilesMap[d.assigned_to] || '—') : 'Unassigned';
-    return `
-      <tr style="opacity:.65;">
-        <td>${escapeHtml(d.name)}</td>
-        <td class="muted-cell">${who}</td>
-        <td class="muted-cell">${due}</td>
-        <td><span class="status-pill" style="background:var(--grey-bg); color:var(--muted); cursor:default;">Deleted</span></td>
-        <td class="muted-cell">${timeAgo(d.deleted_at)} by ${escapeHtml(profilesMap[d.deleted_by] || 'Unknown')}</td>
-        <td></td>
-        <td class="actions-col"></td>
-      </tr>`;
-  }
-
-  function render(){
-    renderFilterTabs();
-    const body = document.getElementById('clientsBody');
-
-    if (statusFilter === 'bin') {
-      const rows = binRows();
-      body.innerHTML = rows.length
-        ? rows.map(binRowHtml).join('')
-        : `<tr><td colspan="7" class="column-empty">Bin is empty.</td></tr>`;
-      return;
-    }
-
-    const rows = visibleClients();
-    body.innerHTML = rows.length
-      ? rows.map(rowHtml).join('')
-      : `<tr><td colspan="7" class="column-empty">No clients match.</td></tr>`;
-
-    document.querySelectorAll('.status-pill').forEach(sel => sel.addEventListener('change', onStatusChange));
-    document.querySelectorAll('.client-name-link').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.id)));
-    document.querySelectorAll('.notes-icon').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.id)));
-    document.querySelectorAll('.edit-icon').forEach(el => el.addEventListener('click', () => openClientModal(el.dataset.id)));
-    document.querySelectorAll('.delete-icon').forEach(el => el.addEventListener('click', () => deleteClient(el.dataset.id)));
-  }
-
-  function rowHtml(c){
-    const due = c.due_date ? c.due_date : '—';
-    const who = c.assigned_to ? escapeHtml(profilesMap[c.assigned_to] || '—') : 'Unassigned';
-    return `
-      <tr>
-        <td><span class="client-name-link" data-id="${c.id}">${escapeHtml(c.name)}</span></td>
-        <td class="muted-cell">${who}</td>
-        <td class="muted-cell">${due}</td>
-        <td>
-          <select class="status-pill ${c.status}" data-id="${c.id}">
-            <option value="blue"  ${c.status==='blue' ?'selected':''}>PENDING</option>
-            <option value="red"   ${c.status==='red'  ?'selected':''}>OVERDUE</option>
-            <option value="green" ${c.status==='green'?'selected':''}>COMPLETED</option>
-          </select>
-        </td>
-        <td class="muted-cell">${timeAgo(c.updated_at)}</td>
-        <td>
-          <span class="icon-btn notes-icon" data-id="${c.id}" title="Notes">📝</span>
-        </td>
-        <td class="actions-col">
-          <div class="row-actions">
-            <span class="icon-btn edit-icon" data-id="${c.id}" title="Edit">✎</span>
-            <span class="icon-btn delete-icon" data-id="${c.id}" title="Delete">🗑</span>
-          </div>
-        </td>
-      </tr>`;
-  }
-
-  async function onStatusChange(e){
-    const id = e.target.dataset.id;
-    const newStatus = e.target.value;
-    e.target.disabled = true;
-    e.target.className = `status-pill ${newStatus}`;
-    const { error } = await sb.from('clients')
-      .update({ status: newStatus, updated_by: currentUser.id, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    e.target.disabled = false;
-    if (error) { alert('Could not update status: ' + error.message); await loadClients(); return; }
-    await loadClients();
-  }
-
-  function updateSortLabel(){
-    document.getElementById('sortBtn').textContent = letterFilter
-      ? `Letter: ${letterFilter} ▾`
-      : (sortAsc ? 'Sort A–Z ↕' : 'Sort Z–A ↕');
-  }
-  function buildSortMenu(){
-    document.getElementById('ascBtn').classList.toggle('active', sortAsc);
-    document.getElementById('descBtn').classList.toggle('active', !sortAsc);
-    const grid = document.getElementById('letterGrid');
-    grid.innerHTML = `<button type="button" class="all-letters ${!letterFilter ? 'active' : ''}" data-letter="">All letters</button>` +
-      LETTERS.map(l => `<button type="button" class="${letterFilter === l ? 'active' : ''}" data-letter="${l}">${l}</button>`).join('');
-    grid.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-      letterFilter = btn.dataset.letter || null;
-      updateSortLabel();
-      document.getElementById('sortMenu').classList.remove('open');
-      render();
-    }));
-  }
-  document.getElementById('sortBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    buildSortMenu();
-    document.getElementById('sortMenu').classList.toggle('open');
-  });
-  document.getElementById('ascBtn').addEventListener('click', () => { sortAsc = true; updateSortLabel(); buildSortMenu(); render(); });
-  document.getElementById('descBtn').addEventListener('click', () => { sortAsc = false; updateSortLabel(); buildSortMenu(); render(); });
-  document.addEventListener('click', (e) => {
-    const menu = document.getElementById('sortMenu');
-    if (menu.classList.contains('open') && !e.target.closest('.popover')) menu.classList.remove('open');
-  });
-
-  async function loadProfiles(){
-    const { data, error } = await sb.from('profiles').select('id, full_name, role');
-    if (error) return;
-    profilesMap = Object.fromEntries(data.map(p => [p.id, p.full_name]));
-    staffList = data;
-    const opts = '<option value="">Unassigned</option>' + data.map(p => `<option value="${p.id}">${escapeHtml(p.full_name)}</option>`).join('');
-    document.getElementById('cAssigned').innerHTML = opts;
-    document.getElementById('excelAssigned').innerHTML = opts;
-  }
-
-  async function loadClients(){
-    const { data, error } = await sb.from('clients').select('*');
-    if (error) {
-      document.getElementById('clientsBody').innerHTML = `<tr><td colspan="7" class="column-empty">Could not load clients: ${escapeHtml(error.message)}</td></tr>`;
-      return;
-    }
-    clients = data;
-    await checkOverdue();
-    render();
-    if (isAdmin()) renderOverview();
-  }
-
-  async function loadDeletedClients(){
-    const { data, error } = await sb.from('deleted_clients').select('*').order('deleted_at', { ascending: false }).limit(300);
-    if (error) { console.warn('Could not load deleted clients:', error.message); return; }
-    deletedClients = data || [];
-    if (statusFilter === 'bin') render();
-    else renderFilterTabs(); // just refresh the Bin count
-  }
-
-  async function checkOverdue(){
-    const today = new Date().toISOString().slice(0, 10);
-    const overdue = clients.filter(c => c.due_date && c.due_date < today && c.status === 'blue');
-    for (const c of overdue) {
-      c.status = 'red';
-      await sb.from('clients')
-        .update({ status: 'red', updated_by: currentUser.id, updated_at: new Date().toISOString() })
-        .eq('id', c.id);
-    }
-  }
-
-  const clientModalBackdrop = document.getElementById('clientModalBackdrop');
-  function setAddMode(mode){
-    document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
-    document.getElementById('modeExcelBtn').classList.toggle('active', mode === 'excel');
-    document.getElementById('singlePanel').style.display = mode === 'single' ? 'block' : 'none';
-    document.getElementById('excelPanel').style.display = mode === 'excel' ? 'block' : 'none';
-  }
-  document.getElementById('modeSingle').addEventListener('click', () => setAddMode('single'));
-  document.getElementById('modeExcelBtn').addEventListener('click', () => {
-    if (!isAdmin()) { alert('Only Admin can import clients from Excel and assign them to staff.'); return; }
-    setAddMode('excel');
-  });
-
-  function openClientModal(id){
-    if (id && !isAdmin()) { alert('Only Admin can edit client details.'); return; }
-    editingClientId = id || null;
-    document.getElementById('clientModalTitle').textContent = id ? 'Edit client' : 'Add client';
-    document.getElementById('clientModalError').textContent = '';
-    document.getElementById('excelError').textContent = '';
-    document.getElementById('addModeTabs').style.display = (id || !isAdmin()) ? 'none' : 'flex';
-    setAddMode('single');
-    if (id) {
-      const c = clients.find(x => x.id === id);
-      document.getElementById('cName').value = c.name;
-      document.getElementById('cDueDate').value = c.due_date || '';
-      document.getElementById('cAssigned').value = c.assigned_to || '';
-    } else {
-      document.getElementById('cName').value = '';
-      document.getElementById('cDueDate').value = '';
-      document.getElementById('cAssigned').value = '';
-      document.getElementById('excelFile').value = '';
-      document.getElementById('excelAssigned').value = '';
-    }
-    clientModalBackdrop.classList.add('open');
-    document.getElementById('cName').focus();
-  }
-  function closeClientModal(){ clientModalBackdrop.classList.remove('open'); }
-  document.getElementById('addBtn').addEventListener('click', () => openClientModal(null));
-  document.getElementById('cancelClientModal').addEventListener('click', closeClientModal);
-  document.getElementById('cancelExcelModal').addEventListener('click', closeClientModal);
-  document.getElementById('closeClientModal').addEventListener('click', closeClientModal);
-  clientModalBackdrop.addEventListener('click', (e) => { if (e.target === clientModalBackdrop) closeClientModal(); });
-
-  document.getElementById('saveClientBtn').addEventListener('click', async () => {
-    const name = document.getElementById('cName').value.trim();
-    const due_date = document.getElementById('cDueDate').value || null;
-    const assigned_to = document.getElementById('cAssigned').value || null;
-    const errEl = document.getElementById('clientModalError');
-    if (!name) { errEl.textContent = 'Enter a client name.'; return; }
-    if (editingClientId && !isAdmin()) { errEl.textContent = 'Only Admin can edit client details.'; return; }
-
-    const btn = document.getElementById('saveClientBtn');
-    btn.disabled = true; btn.textContent = 'Saving...';
-
-    let error;
-    if (editingClientId) {
-      ({ error } = await sb.from('clients')
-        .update({ name, due_date, assigned_to, updated_by: currentUser.id, updated_at: new Date().toISOString() })
-        .eq('id', editingClientId));
-    } else {
-      ({ error } = await sb.from('clients')
-        .insert({ name, due_date, assigned_to, status: 'blue', updated_by: currentUser.id, updated_at: new Date().toISOString() }));
-    }
-
-    btn.disabled = false; btn.textContent = 'Save';
-    if (error) { errEl.textContent = 'Could not save: ' + error.message; return; }
-    closeClientModal();
-    await loadClients();
-  });
-
-  async function deleteClient(id){
-    if (!isAdmin()) { alert('Only Admin can delete clients.'); return; }
-    const c = clients.find(x => x.id === id);
-    if (!c) return;
-    if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
-
-    const { error: logError } = await sb.from('deleted_clients').insert({
-      name: c.name, due_date: c.due_date, assigned_to: c.assigned_to, deleted_by: currentUser.id
-    });
-    if (logError) console.warn('Could not log deletion:', logError.message);
-
-    const { error } = await sb.from('clients').delete().eq('id', id);
-    if (error) { alert('Could not delete: ' + error.message); return; }
-    closeDetailModal();
-    await loadClients();
-    await loadDeletedClients();
-  }
-
-  const detailBackdrop = document.getElementById('detailBackdrop');
-  async function openDetail(id){
-    openDetailId = id;
-    const c = clients.find(x => x.id === id);
-    if (!c) return;
-    document.getElementById('detailName').textContent = c.name;
-    document.getElementById('detailMeta').innerHTML = `
-      <span>${statusLabel(c.status)}</span>
-      <span>${c.due_date ? 'Due ' + c.due_date : 'No due date'}</span>
-      <span>${c.assigned_to ? escapeHtml(profilesMap[c.assigned_to] || '—') : 'Unassigned'}</span>
-    `;
-    document.getElementById('detailEditBtn').style.display = isAdmin() ? 'inline-flex' : 'none';
-    document.getElementById('detailDeleteBtn').style.display = isAdmin() ? 'inline-flex' : 'none';
-    document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); openClientModal(id); };
-    document.getElementById('detailDeleteBtn').onclick = () => deleteClient(id);
-    detailBackdrop.classList.add('open');
-    await loadNotes(id);
-    await loadHistory(id);
-  }
-  function closeDetailModal(){ detailBackdrop.classList.remove('open'); openDetailId = null; }
-  document.getElementById('closeDetail').addEventListener('click', closeDetailModal);
-  detailBackdrop.addEventListener('click', (e) => { if (e.target === detailBackdrop) closeDetailModal(); });
-
-  async function loadNotes(clientId){
-    const { data } = await sb.from('client_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false });
-    const list = document.getElementById('notesList');
-    if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No notes yet.</div>`; return; }
-    list.innerHTML = data.map(n => `
-      <div class="note-item">
-        <div class="meta">${escapeHtml(profilesMap[n.author_id] || 'Unknown')} · ${timeAgo(n.created_at)}</div>
-        ${escapeHtml(n.body)}
-      </div>`).join('');
-  }
-
-  async function loadHistory(clientId){
-    const { data } = await sb.from('status_history').select('*').eq('client_id', clientId).order('changed_at', { ascending: false });
-    const list = document.getElementById('historyList');
-    if (!data || data.length === 0) { list.innerHTML = `<div class="column-empty">No history yet.</div>`; return; }
-    list.innerHTML = data.map(h => `
-      <div class="history-item">
-        ${h.old_status ? statusLabel(h.old_status) + ' → ' : 'Created as '}${statusLabel(h.new_status)}
-        by ${escapeHtml(profilesMap[h.changed_by] || 'Unknown')} · ${timeAgo(h.changed_at)}
-      </div>`).join('');
-  }
-
-  document.getElementById('addNoteBtn').addEventListener('click', async () => {
-    const textEl = document.getElementById('newNoteText');
-    const body = textEl.value.trim();
-    if (!body || !openDetailId) return;
-    const btn = document.getElementById('addNoteBtn');
-    btn.disabled = true;
-    const { error } = await sb.from('client_notes').insert({ client_id: openDetailId, author_id: currentUser.id, body });
-    btn.disabled = false;
-    if (error) { alert('Could not add note: ' + error.message); return; }
-    textEl.value = '';
-    await loadNotes(openDetailId);
-  });
-
-  document.getElementById('searchInput').addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
-  document.getElementById('myClientsToggle').addEventListener('change', (e) => { myClientsOnly = e.target.checked; render(); });
-
-  document.getElementById('exportBtn').addEventListener('click', () => {
-    const rows = visibleClients();
-    const data = rows.map(c => ({
-      Name: c.name,
-      Status: statusLabel(c.status),
-      'Due Date': c.due_date || '',
-      'Assigned To': profilesMap[c.assigned_to] || '',
-      'Last Updated': c.updated_at || '',
-      'Updated By': profilesMap[c.updated_by] || ''
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Clients');
-    XLSX.writeFile(wb, `taxbase-clients-${new Date().toISOString().slice(0,10)}.xlsx`);
-  });
-
-  document.getElementById('importExcelBtn').addEventListener('click', async () => {
-    if (!isAdmin()) { alert('Only Admin can import clients from Excel.'); return; }
-    const fileInput = document.getElementById('excelFile');
-    const errEl = document.getElementById('excelError');
-    errEl.textContent = '';
-    const file = fileInput.files[0];
-    if (!file) { errEl.textContent = 'Choose an Excel file first.'; return; }
-    const assignedTo = document.getElementById('excelAssigned').value || null;
-
-    let rows;
-    try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      rows = json.map(r => {
-        const nameKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'name');
-        const dueKey = Object.keys(r).find(k => ['due_date', 'due date', 'duedate'].includes(k.trim().toLowerCase()));
-        const name = nameKey ? String(r[nameKey]).trim() : '';
-        let due = dueKey ? r[dueKey] : '';
-        if (due instanceof Date) due = due.toISOString().slice(0, 10);
-        else due = due ? String(due).trim() : '';
-        return name ? {
-          name, due_date: due || null, status: 'blue', assigned_to: assignedTo,
-          updated_by: currentUser.id, updated_at: new Date().toISOString()
-        } : null;
-      }).filter(Boolean);
-    } catch (e) {
-      errEl.textContent = 'Could not read Excel file: ' + e.message;
-      return;
-    }
-    if (!rows || rows.length === 0) { errEl.textContent = 'No valid rows found — make sure there is a "name" column.'; return; }
-
-    const btn = document.getElementById('importExcelBtn');
-    btn.disabled = true; btn.textContent = 'Importing...';
-    const { error } = await sb.from('clients').insert(rows);
-    btn.disabled = false; btn.textContent = 'Import';
-
-    if (error) { errEl.textContent = 'Import failed: ' + error.message; return; }
-    showToast(`Imported ${rows.length} client${rows.length > 1 ? 's' : ''}${assignedTo ? ' and assigned to ' + (profilesMap[assignedTo] || 'staff') : ''}.`);
-    closeClientModal();
-    await loadClients();
-  });
-
-  document.getElementById('navToggle').addEventListener('click', () => {
-    const sidebar = document.getElementById('navSidebar');
-    sidebar.classList.toggle('collapsed');
-    document.getElementById('navToggle').textContent = sidebar.classList.contains('collapsed') ? '»' : '«';
-  });
-  document.getElementById('tabBoard').addEventListener('click', () => switchTab('board'));
-  document.getElementById('tabOverview').addEventListener('click', () => switchTab('overview'));
-  function switchTab(tab){
-    document.getElementById('boardView').style.display = tab === 'board' ? 'block' : 'none';
-    document.getElementById('overviewView').style.display = tab === 'overview' ? 'block' : 'none';
-    document.getElementById('tabBoard').classList.toggle('active', tab === 'board');
-    document.getElementById('tabOverview').classList.toggle('active', tab === 'overview');
-  }
-
-  function renderOverview(){
-    const counts = { blue: 0, red: 0, green: 0 };
-    clients.forEach(c => counts[c.status]++);
-
-    const oldestRed = clients.filter(c => c.status === 'red')
-      .sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at)).slice(0, 8);
-
-    const workload = staffList.map(p => {
-      const assigned = clients.filter(c => c.assigned_to === p.id);
-      return { name: p.full_name, total: assigned.length, red: assigned.filter(c => c.status === 'red').length };
-    }).sort((a, b) => b.red - a.red || b.total - a.total);
-
-    document.getElementById('overviewView').innerHTML = `
-      <div class="stat-row">
-        <div class="stat-card"><div class="num" style="color:var(--blue)">${counts.blue}</div><div class="label">PENDING</div></div>
-        <div class="stat-card"><div class="num" style="color:var(--red)">${counts.red}</div><div class="label">OVERDUE</div></div>
-        <div class="stat-card"><div class="num" style="color:var(--green)">${counts.green}</div><div class="label">COMPLETED</div></div>
-      </div>
-      <div class="panel">
-        <h3>Longest-delayed clients</h3>
-        ${oldestRed.length ? `<table><tr><th>Client</th><th>Delayed since</th><th>Assigned to</th></tr>
-          ${oldestRed.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${timeAgo(c.updated_at)}</td><td>${escapeHtml(profilesMap[c.assigned_to] || 'Unassigned')}</td></tr>`).join('')}
-        </table>` : '<div class="column-empty">No delayed clients right now.</div>'}
-      </div>
-      <div class="panel">
-        <h3>Staff workload</h3>
-        <table><tr><th>Staff</th><th>Assigned clients</th><th>Delayed</th></tr>
-          ${workload.map(w => `<tr><td>${escapeHtml(w.name)}</td><td>${w.total}</td><td style="color:${w.red ? 'var(--red)' : 'inherit'}">${w.red}</td></tr>`).join('')}
-        </table>
-      </div>`;
-  }
-
   function showToast(message){
     const stack = document.getElementById('toastStack');
     const el = document.createElement('div');
@@ -845,53 +333,309 @@
     setTimeout(() => el.remove(), 5000);
   }
 
-  let audioCtx = null;
-  function primeAudio(){ if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-  document.addEventListener('click', primeAudio, { once: true });
-  function playAlarm(){
-    try {
-      primeAudio();
-      const now = audioCtx.currentTime;
-      [880, 660].forEach((freq, i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine'; osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, now + i * 0.18);
-        gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.16);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start(now + i * 0.18); osc.stop(now + i * 0.18 + 0.18);
-      });
-    } catch (e) {}
-  }
-  function showRedAlert(client){
-    const stack = document.getElementById('alertStack');
-    const el = document.createElement('div');
-    el.className = 'alert';
-    el.innerHTML = `<span class="dot"></span><span class="alert-text"><b>${escapeHtml(client.name)}</b> just moved to Overdue.</span><button>Got it</button>`;
-    el.querySelector('button').addEventListener('click', () => el.remove());
-    stack.appendChild(el);
-    playAlarm();
+  /* ---------------- Sidebar collapse ---------------- */
+  document.getElementById('navToggle').addEventListener('click', () => {
+    const sidebar = document.getElementById('navSidebar');
+    sidebar.classList.toggle('collapsed');
+    document.getElementById('navToggle').textContent = sidebar.classList.contains('collapsed') ? '»' : '«';
+  });
+
+  /* ---------------- Profiles (for remark author names) ---------------- */
+  async function loadProfiles(){
+    const { data, error } = await sb.from('profiles').select('id, full_name, role');
+    if (error) return;
+    profilesMap = Object.fromEntries(data.map(p => [p.id, p.full_name]));
   }
 
+  /* ---------------- Load form entries + remarks ---------------- */
+  async function loadFormEntries(){
+    for (const f of FORMS) {
+      const { data, error } = await sb.from('form_entries')
+        .select('*, form_remarks(id, body, author_id, created_at)')
+        .eq('form_type', f.key)
+        .order('due_date', { ascending: true, nullsFirst: false });
+      if (error) {
+        console.warn('Could not load', f.key, error.message);
+        formData[f.key] = [];
+        continue;
+      }
+      (data || []).forEach(entry => {
+        entry.form_remarks = (entry.form_remarks || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      });
+      formData[f.key] = data || [];
+    }
+    renderWidgets();
+    if (currentListFormType) renderListTable();
+  }
+
+  /* ---------------- Widget cards (sortable drag & drop) ---------------- */
+  let widgetOrder = JSON.parse(localStorage.getItem('taxbase_widget_order') || 'null') || FORMS.map(f => f.key);
+  FORMS.forEach(f => { if (!widgetOrder.includes(f.key)) widgetOrder.push(f.key); });
+  widgetOrder = widgetOrder.filter(k => FORMS.some(f => f.key === k));
+  let draggedKey = null;
+
+  function renderWidgets(){
+    const grid = document.getElementById('widgetGrid');
+    grid.innerHTML = widgetOrder.map(key => {
+      const f = FORMS.find(x => x.key === key);
+      const count = (formData[key] || []).length;
+      return `
+        <div class="widget-card" draggable="true" data-form="${key}">
+          <div class="widget-label">${escapeHtml(f.label.toUpperCase())}</div>
+          <div class="widget-num">${count}</div>
+        </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.widget-card').forEach(card => {
+      card.addEventListener('click', () => openFormList(card.dataset.form));
+      card.addEventListener('dragstart', (e) => {
+        draggedKey = card.dataset.form;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        localStorage.setItem('taxbase_widget_order', JSON.stringify(widgetOrder));
+        draggedKey = null;
+        renderWidgets();
+      });
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggedKey || draggedKey === card.dataset.form) return;
+        const fromIdx = widgetOrder.indexOf(draggedKey);
+        const toIdx = widgetOrder.indexOf(card.dataset.form);
+        if (fromIdx === -1 || toIdx === -1) return;
+        widgetOrder.splice(fromIdx, 1);
+        widgetOrder.splice(toIdx, 0, draggedKey);
+        renderWidgets();
+        const stillDragging = grid.querySelector(`[data-form="${draggedKey}"]`);
+        if (stillDragging) stillDragging.classList.add('dragging');
+      });
+    });
+  }
+
+  /* ---------------- Form list modal ---------------- */
+  const listModalBackdrop = document.getElementById('listModalBackdrop');
+  let listSearchTerm = '';
+
+  function getFilteredEntries(formType){
+    const rows = formData[formType] || [];
+    if (!listSearchTerm) return rows;
+    return rows.filter(e => e.company_name.toLowerCase().includes(listSearchTerm.toLowerCase()));
+  }
+
+  function openFormList(formType){
+    currentListFormType = formType;
+    listSearchTerm = '';
+    document.getElementById('listSearchInput').value = '';
+    const f = FORMS.find(x => x.key === formType);
+    document.getElementById('listModalTitle').textContent = f.label;
+    renderListTable();
+    listModalBackdrop.classList.add('open');
+  }
+  function closeListModal(){
+    listModalBackdrop.classList.remove('open');
+    currentListFormType = null;
+  }
+  document.getElementById('closeListModal').addEventListener('click', closeListModal);
+  listModalBackdrop.addEventListener('click', (e) => { if (e.target === listModalBackdrop) closeListModal(); });
+
+  function renderListTable(){
+    const body = document.getElementById('listTableBody');
+    const rows = getFilteredEntries(currentListFormType);
+    body.innerHTML = rows.length
+      ? rows.map(entryRowHtml).join('')
+      : `<tr><td colspan="3" class="empty-state">No entries yet. Click "+ Add client" to add one.</td></tr>`;
+
+    body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
+    body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
+    body.querySelectorAll('.submit-remark-btn').forEach(btn => btn.addEventListener('click', () => onSubmitRemark(btn.dataset.entry)));
+  }
+
+  function entryRowHtml(entry){
+    const due = formatDateDMY(entry.due_date);
+    const remarks = entry.form_remarks || [];
+    const remarksHtml = remarks.length
+      ? remarks.map(remarkItemHtml).join('')
+      : `<div class="no-remarks">No remarks yet.</div>`;
+    return `
+      <tr>
+        <td class="company-cell">${escapeHtml(entry.company_name)}</td>
+        <td class="due-cell">${due}</td>
+        <td class="remarks-cell">
+          <div class="remarks-list">${remarksHtml}</div>
+          <button type="button" class="add-remark-btn" data-entry="${entry.id}" title="Add remark">+</button>
+          <div class="remark-compose" id="compose-${entry.id}">
+            <textarea id="composeText-${entry.id}" rows="2" placeholder="Type a remark..."></textarea>
+            <div class="remark-compose-actions">
+              <button type="button" class="cancel-remark-btn" data-entry="${entry.id}">Cancel</button>
+              <button type="button" class="submit-remark-btn primary" data-entry="${entry.id}">Add</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  function remarkItemHtml(r){
+    const name = escapeHtml(profilesMap[r.author_id] || 'Unknown');
+    return `
+      <div class="remark-item">
+        <div class="remark-text">${escapeHtml(r.body)}</div>
+        <div class="remark-meta">Updated by: ${name} at ${formatTimeMeta(r.created_at)}</div>
+      </div>`;
+  }
+
+  function toggleCompose(entryId, forceClose){
+    const el = document.getElementById(`compose-${entryId}`);
+    if (!el) return;
+    const isOpen = el.style.display === 'block';
+    el.style.display = (forceClose || isOpen) ? 'none' : 'block';
+    if (!forceClose && !isOpen) document.getElementById(`composeText-${entryId}`).focus();
+    if (forceClose) document.getElementById(`composeText-${entryId}`).value = '';
+  }
+
+  function onSubmitRemark(entryId){
+    const textEl = document.getElementById(`composeText-${entryId}`);
+    const body = textEl.value.trim();
+    if (!body) { textEl.focus(); return; }
+    pendingRemark = { entryId, body };
+    document.getElementById('remarkConfirmBackdrop').classList.add('open');
+  }
+
+  document.getElementById('remarkCancelBtn').addEventListener('click', () => {
+    pendingRemark = null;
+    document.getElementById('remarkConfirmBackdrop').classList.remove('open');
+  });
+  document.getElementById('remarkConfirmBtn').addEventListener('click', async () => {
+    if (!pendingRemark) return;
+    const btn = document.getElementById('remarkConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Adding...';
+    const { error } = await sb.from('form_remarks').insert({
+      entry_id: pendingRemark.entryId, body: pendingRemark.body, author_id: currentUser.id
+    });
+    btn.disabled = false; btn.textContent = 'Confirm';
+    document.getElementById('remarkConfirmBackdrop').classList.remove('open');
+    if (error) { showToast('Could not add remark: ' + error.message); pendingRemark = null; return; }
+    pendingRemark = null;
+    await loadFormEntries();
+  });
+
+  /* ---------------- Add client modal ---------------- */
+  const entryModalBackdrop = document.getElementById('entryModalBackdrop');
+  document.getElementById('listAddBtn').addEventListener('click', () => {
+    const f = FORMS.find(x => x.key === currentListFormType);
+    document.getElementById('entryModalTitle').textContent = `Add client — ${f.label}`;
+    document.getElementById('eCompanyName').value = '';
+    document.getElementById('eDueDate').value = '';
+    document.getElementById('eRemark').value = '';
+    document.getElementById('entryModalError').textContent = '';
+    entryModalBackdrop.classList.add('open');
+    document.getElementById('eCompanyName').focus();
+  });
+  function closeEntryModal(){ entryModalBackdrop.classList.remove('open'); }
+  document.getElementById('closeEntryModal').addEventListener('click', closeEntryModal);
+  document.getElementById('cancelEntryModal').addEventListener('click', closeEntryModal);
+  entryModalBackdrop.addEventListener('click', (e) => { if (e.target === entryModalBackdrop) closeEntryModal(); });
+
+  document.getElementById('saveEntryBtn').addEventListener('click', async () => {
+    const company_name = document.getElementById('eCompanyName').value.trim();
+    const due_date = document.getElementById('eDueDate').value || null;
+    const remark = document.getElementById('eRemark').value.trim();
+    const errEl = document.getElementById('entryModalError');
+    if (!company_name) { errEl.textContent = 'Enter a company name.'; return; }
+    if (!due_date) { errEl.textContent = 'Choose a due date.'; return; }
+
+    const btn = document.getElementById('saveEntryBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    const { data: newEntry, error } = await sb.from('form_entries')
+      .insert({ form_type: currentListFormType, company_name, due_date, created_by: currentUser.id })
+      .select().single();
+
+    if (error) {
+      btn.disabled = false; btn.textContent = 'Save';
+      errEl.textContent = 'Could not save: ' + error.message;
+      return;
+    }
+
+    if (remark && newEntry) {
+      const { error: remarkError } = await sb.from('form_remarks')
+        .insert({ entry_id: newEntry.id, body: remark, author_id: currentUser.id });
+      if (remarkError) showToast('Client saved, but the remark could not be added: ' + remarkError.message);
+    }
+
+    btn.disabled = false; btn.textContent = 'Save';
+    closeEntryModal();
+    showToast(`${company_name} added.`);
+    await loadFormEntries();
+  });
+
+  /* ---------------- List search (inside a form's modal) ---------------- */
+  document.getElementById('listSearchInput').addEventListener('input', (e) => {
+    listSearchTerm = e.target.value;
+    renderListTable();
+  });
+
+  /* ---------------- Export Excel (per form, respects current filter) ---------------- */
+  document.getElementById('listExportBtn').addEventListener('click', () => {
+    const f = FORMS.find(x => x.key === currentListFormType);
+    const rows = getFilteredEntries(currentListFormType);
+    const data = rows.map(e => ({
+      'Company Name': e.company_name,
+      'Due Date': formatDateDMY(e.due_date),
+      'Remarks': (e.form_remarks || []).map(r =>
+        `${r.body} — ${profilesMap[r.author_id] || 'Unknown'} (${formatTimeMeta(r.created_at)})`
+      ).join(' | ')
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, f.label);
+    XLSX.writeFile(wb, `${f.label.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  });
+
+  /* ---------------- Dashboard search (quick finder across both forms) ---------------- */
+  const dashSearchInput = document.getElementById('dashSearchInput');
+  const dashSearchResults = document.getElementById('dashSearchResults');
+  dashSearchInput.addEventListener('input', () => {
+    const term = dashSearchInput.value.trim().toLowerCase();
+    if (!term) { dashSearchResults.classList.remove('open'); dashSearchResults.innerHTML = ''; return; }
+    const matches = [];
+    FORMS.forEach(f => {
+      (formData[f.key] || []).forEach(entry => {
+        if (entry.company_name.toLowerCase().includes(term)) matches.push({ entry, form: f });
+      });
+    });
+    if (!matches.length) {
+      dashSearchResults.innerHTML = `<div class="dash-search-empty">No companies match "${escapeHtml(dashSearchInput.value.trim())}".</div>`;
+    } else {
+      dashSearchResults.innerHTML = matches.slice(0, 8).map(({ entry, form }) => `
+        <div class="dash-search-item" data-form="${form.key}">
+          <span class="sname">${escapeHtml(entry.company_name)}</span>
+          <span class="sform">${escapeHtml(form.label)}</span>
+          <span class="sdue">${formatDateDMY(entry.due_date)}</span>
+        </div>`).join('');
+      dashSearchResults.querySelectorAll('.dash-search-item').forEach(el => {
+        el.addEventListener('click', () => {
+          openFormList(el.dataset.form);
+          dashSearchResults.classList.remove('open');
+          dashSearchInput.value = '';
+        });
+      });
+    }
+    dashSearchResults.classList.add('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dash-search-wrap')) dashSearchResults.classList.remove('open');
+  });
+
+  /* ---------------- Realtime ---------------- */
   function setupRealtime(){
-    sb.channel('clients-live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, (payload) => {
-        showToast(`New client added: ${payload.new.name}`);
-        loadClients();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, (payload) => {
-        loadClients();
-        if (payload.new.status === 'red' && payload.old.status !== 'red') showRedAlert(payload.new);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clients' }, () => loadClients())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_notes' }, (payload) => {
-        if (openDetailId === payload.new.client_id) loadNotes(openDetailId);
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'deleted_clients' }, () => loadDeletedClients())
+    sb.channel('forms-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'form_entries' }, () => loadFormEntries())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'form_remarks' }, () => loadFormEntries())
       .subscribe();
   }
 
+  /* ---------------- Auth / init ---------------- */
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await sb.auth.signOut();
     window.location.href = 'index.html';
@@ -911,20 +655,13 @@
     currentProfile = profile;
     document.getElementById('userName').textContent = profile.full_name;
     document.getElementById('userRole').textContent = profile.role === 'head' ? 'Admin' : 'Staff';
-    if (profile.role === 'head') {
-      document.getElementById('tabOverview').style.display = 'flex';
-      document.body.classList.add('admin-view');
-    } else {
-      document.body.classList.add('staff-view');
-    }
+    document.body.classList.add(profile.role === 'head' ? 'admin-view' : 'staff-view');
 
-    updateSortLabel();
     showToast(`Welcome, ${profile.full_name}! 👋`);
     setupRealtime();
 
     await loadProfiles();
-    await loadClients();
-    await loadDeletedClients();
+    await loadFormEntries();
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   })();
