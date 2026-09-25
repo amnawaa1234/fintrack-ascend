@@ -193,6 +193,22 @@
   .list-table tbody tr:last-child td{border-bottom:none;}
   .company-cell{font-weight:600; white-space:nowrap;}
   .due-cell{color:var(--muted); white-space:nowrap;}
+  .status-cell{white-space:nowrap;}
+  .status-select{
+    appearance:none; -webkit-appearance:none; border:none; border-radius:20px; padding:5px 26px 5px 12px;
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+    background-repeat:no-repeat; background-position:right 9px center; background-size:9px;
+  }
+  .status-select:focus{outline:2px solid rgba(43,76,126,.25);}
+  .status-select.status-pending{
+    background-color:var(--blue-bg); color:var(--blue);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%232F6FED' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  .status-select.status-completed{
+    background-color:var(--green-bg); color:var(--green);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%232F9E44' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  .status-date{font-size:11px; color:var(--muted); margin-top:5px;}
   .remarks-cell{min-width:260px;}
   .empty-state{padding:26px 6px; text-align:center; color:var(--muted); font-size:13px;}
 
@@ -289,8 +305,9 @@
         <table class="list-table">
           <thead>
             <tr>
-              <th style="width:22%;">Company Name</th>
-              <th style="width:14%;">Due Date</th>
+              <th style="width:20%;">Company Name</th>
+              <th style="width:12%;">Due Date</th>
+              <th style="width:13%;">Status</th>
               <th>Remarks</th>
             </tr>
           </thead>
@@ -493,10 +510,20 @@
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
     body.querySelectorAll('.submit-remark-btn').forEach(btn => btn.addEventListener('click', () => onSubmitRemark(btn.dataset.entry)));
+    body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
+  }
+
+  async function onStatusChange(entryId, newStatus){
+    const { error } = await sb.from('form_entries')
+      .update({ status: newStatus, status_changed_at: new Date().toISOString() })
+      .eq('id', entryId);
+    if (error) { showToast('Could not update status: ' + error.message); }
+    await loadFormEntries();
   }
 
   function entryRowHtml(entry){
     const due = formatDateDMY(entry.due_date);
+    const status = entry.status === 'completed' ? 'completed' : 'pending';
     const remarks = entry.form_remarks || [];
     const remarksHtml = remarks.length
       ? remarks.map(remarkItemHtml).join('')
@@ -505,6 +532,13 @@
       <tr>
         <td class="company-cell">${escapeHtml(entry.company_name)}</td>
         <td class="due-cell">${due}</td>
+        <td class="status-cell">
+          <select class="status-select status-${status}" data-entry="${entry.id}">
+            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+          </select>
+          <div class="status-date">Changed on ${formatDateDMY(entry.status_changed_at ? entry.status_changed_at.slice(0, 10) : entry.created_at.slice(0, 10))}</div>
+        </td>
         <td class="remarks-cell">
           <div class="remarks-list">${remarksHtml}</div>
           <button type="button" class="add-remark-btn" data-entry="${entry.id}" title="Add remark">+</button>
@@ -626,6 +660,8 @@
     const data = rows.map(e => ({
       'Company Name': e.company_name,
       'Due Date': formatDateDMY(e.due_date),
+      'Status': e.status === 'completed' ? 'Completed' : 'Pending',
+      'Status Changed': formatDateDMY(e.status_changed_at ? e.status_changed_at.slice(0, 10) : e.created_at.slice(0, 10)),
       'Remarks': (e.form_remarks || []).map(r =>
         `${r.body} — ${profilesMap[r.author_id] || 'Unknown'} (${formatTimeMeta(r.created_at)})`
       ).join(' | ')
