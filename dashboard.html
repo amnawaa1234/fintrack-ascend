@@ -113,7 +113,19 @@
   .widget-card .widget-label{font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.03em;}
   .widget-card .widget-num{font-size:30px; font-weight:700; margin-top:10px; color:var(--ink);}
 
-  /* ---- Modals (shared) ---- */
+  /* ---- Widget active state (its list panel is open) ---- */
+  .widget-card.active{border-color:var(--navy); box-shadow:0 0 0 2px rgba(43,76,126,.15);}
+
+  /* ---- Inline list panel (appears under the widget grid when a card is clicked) ---- */
+  .list-panel{
+    display:none; background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:22px 24px; margin-top:18px;
+  }
+  .list-panel.open{display:block;}
+  .list-panel-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+  .list-panel-header h2{font-size:16px; font-weight:600; margin:0;}
+
+  /* ---- Modals (shared — still used for Add client + remark confirmation) ---- */
   .modal-backdrop{
     display:none; position:fixed; inset:0; background:rgba(28,30,38,.4);
     align-items:center; justify-content:center; padding:20px; z-index:40; overflow-y:auto;
@@ -121,7 +133,6 @@
   .modal-backdrop.open{display:flex;}
   .modal{background:#fff; border-radius:10px; padding:24px; width:100%; max-width:400px; max-height:88vh; overflow-y:auto;}
   .modal.wide{max-width:420px;}
-  .modal.xwide{max-width:780px;}
   .modal h2{font-size:16px; font-weight:600; margin:0 0 16px; display:flex; justify-content:space-between; align-items:center;}
   .modal label{display:block; font-size:13px; font-weight:500; margin-bottom:6px; margin-top:12px;}
   .modal label:first-of-type{margin-top:0;}
@@ -154,6 +165,23 @@
   .list-toolbar button:hover{border-color:var(--navy); color:var(--navy);}
   .list-toolbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
   .list-toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
+
+  /* ---- Inline add-client form (inside the list panel) ---- */
+  .add-entry-form{display:none; border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:16px; background:#FAFAF8;}
+  .add-entry-form.open{display:block;}
+  .add-entry-form h3{font-size:13px; font-weight:600; margin:0 0 12px;}
+  .add-entry-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .add-entry-form label{display:block; font-size:12px; font-weight:500; margin-bottom:5px; margin-top:10px;}
+  .add-entry-form label:first-of-type{margin-top:0;}
+  .add-entry-form input, .add-entry-form textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px;
+    font-size:13px; font-family:inherit; background:#fff;
+  }
+  .add-entry-form input:focus, .add-entry-form textarea:focus{outline:none; border-color:var(--navy);}
+  .add-entry-form textarea{resize:vertical; min-height:50px;}
+  .add-entry-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:12px;}
+  .add-entry-actions button{padding:8px 14px; border-radius:6px; border:1px solid var(--line); background:#fff; font-size:13px; cursor:pointer; font-family:inherit;}
+  .add-entry-actions button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
 
   .list-table-wrap{border:1px solid var(--line); border-radius:8px; overflow-x:auto;}
   .list-table{width:100%; border-collapse:collapse; font-size:13px;}
@@ -222,52 +250,56 @@
     </div>
 
     <div class="widget-grid" id="widgetGrid"></div>
+
+    <!-- Inline list panel: appears here once a widget card is clicked -->
+    <div class="list-panel" id="listPanel">
+      <div class="list-panel-header">
+        <h2 id="listPanelTitle">Form C</h2>
+        <span class="close-x" id="closeListPanel" title="Collapse">&times;</span>
+      </div>
+
+      <div class="list-toolbar">
+        <input type="text" id="listSearchInput" placeholder="Search company name...">
+        <button id="listExportBtn">⬇ Export Excel</button>
+        <button class="primary" id="listAddBtn">+ Add client</button>
+      </div>
+
+      <div class="add-entry-form" id="addEntryForm">
+        <h3 id="addEntryTitle">New client</h3>
+        <div class="add-entry-grid">
+          <div>
+            <label for="eCompanyName">Company name</label>
+            <input type="text" id="eCompanyName" placeholder="e.g. Meridian Holdings Sdn Bhd">
+          </div>
+          <div>
+            <label for="eDueDate">Due date</label>
+            <input type="date" id="eDueDate">
+          </div>
+        </div>
+        <label for="eRemark">Remarks (optional)</label>
+        <textarea id="eRemark" rows="2" placeholder="Optional remark..."></textarea>
+        <div class="modal-error" id="entryModalError"></div>
+        <div class="add-entry-actions">
+          <button id="cancelEntryForm">Cancel</button>
+          <button class="primary" id="saveEntryBtn">Save</button>
+        </div>
+      </div>
+
+      <div class="list-table-wrap">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th style="width:22%;">Company Name</th>
+              <th style="width:14%;">Due Date</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="listTableBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
-</div>
-
-<!-- Form list modal: shows entries for whichever widget was clicked -->
-<div class="modal-backdrop" id="listModalBackdrop">
-  <div class="modal xwide">
-    <h2><span id="listModalTitle">Form C</span><span class="close-x" id="closeListModal">&times;</span></h2>
-
-    <div class="list-toolbar">
-      <input type="text" id="listSearchInput" placeholder="Search company name...">
-      <button id="listExportBtn">⬇ Export Excel</button>
-      <button class="primary" id="listAddBtn">+ Add client</button>
-    </div>
-
-    <div class="list-table-wrap">
-      <table class="list-table">
-        <thead>
-          <tr>
-            <th style="width:22%;">Company Name</th>
-            <th style="width:14%;">Due Date</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody id="listTableBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Add client modal -->
-<div class="modal-backdrop" id="entryModalBackdrop">
-  <div class="modal">
-    <h2><span id="entryModalTitle">Add client</span><span class="close-x" id="closeEntryModal">&times;</span></h2>
-    <label for="eCompanyName">Company name</label>
-    <input type="text" id="eCompanyName" placeholder="e.g. Meridian Holdings Sdn Bhd">
-    <label for="eDueDate">Due date</label>
-    <input type="date" id="eDueDate">
-    <label for="eRemark">Remarks (optional)</label>
-    <textarea id="eRemark" rows="3" placeholder="Optional remark..."></textarea>
-    <div class="modal-error" id="entryModalError"></div>
-    <div class="modal-actions">
-      <button id="cancelEntryModal">Cancel</button>
-      <button class="primary" id="saveEntryBtn">Save</button>
-    </div>
-  </div>
 </div>
 
 <!-- Remark confirmation modal -->
@@ -379,8 +411,9 @@
     grid.innerHTML = widgetOrder.map(key => {
       const f = FORMS.find(x => x.key === key);
       const count = (formData[key] || []).length;
+      const activeCls = key === currentListFormType ? ' active' : '';
       return `
-        <div class="widget-card" draggable="true" data-form="${key}">
+        <div class="widget-card${activeCls}" draggable="true" data-form="${key}">
           <div class="widget-label">${escapeHtml(f.label.toUpperCase())}</div>
           <div class="widget-num">${count}</div>
         </div>`;
@@ -413,8 +446,8 @@
     });
   }
 
-  /* ---------------- Form list modal ---------------- */
-  const listModalBackdrop = document.getElementById('listModalBackdrop');
+  /* ---------------- Inline form list panel ---------------- */
+  const listPanel = document.getElementById('listPanel');
   let listSearchTerm = '';
 
   function getFilteredEntries(formType){
@@ -424,20 +457,31 @@
   }
 
   function openFormList(formType){
+    // Clicking the widget that's already open collapses the panel instead.
+    if (currentListFormType === formType) { closeListPanel(); return; }
     currentListFormType = formType;
     listSearchTerm = '';
     document.getElementById('listSearchInput').value = '';
+    closeEntryForm();
     const f = FORMS.find(x => x.key === formType);
-    document.getElementById('listModalTitle').textContent = f.label;
+    document.getElementById('listPanelTitle').textContent = f.label;
     renderListTable();
-    listModalBackdrop.classList.add('open');
+    listPanel.classList.add('open');
+    markActiveWidget();
+    listPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  function closeListModal(){
-    listModalBackdrop.classList.remove('open');
+  function closeListPanel(){
+    listPanel.classList.remove('open');
     currentListFormType = null;
+    closeEntryForm();
+    markActiveWidget();
   }
-  document.getElementById('closeListModal').addEventListener('click', closeListModal);
-  listModalBackdrop.addEventListener('click', (e) => { if (e.target === listModalBackdrop) closeListModal(); });
+  function markActiveWidget(){
+    document.querySelectorAll('.widget-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.form === currentListFormType);
+    });
+  }
+  document.getElementById('closeListPanel').addEventListener('click', closeListPanel);
 
   function renderListTable(){
     const body = document.getElementById('listTableBody');
@@ -519,22 +563,22 @@
     await loadFormEntries();
   });
 
-  /* ---------------- Add client modal ---------------- */
-  const entryModalBackdrop = document.getElementById('entryModalBackdrop');
+  /* ---------------- Inline add-client form ---------------- */
+  const addEntryForm = document.getElementById('addEntryForm');
   document.getElementById('listAddBtn').addEventListener('click', () => {
+    const isOpen = addEntryForm.classList.contains('open');
+    if (isOpen) { closeEntryForm(); return; }
     const f = FORMS.find(x => x.key === currentListFormType);
-    document.getElementById('entryModalTitle').textContent = `Add client — ${f.label}`;
+    document.getElementById('addEntryTitle').textContent = `New client — ${f.label}`;
     document.getElementById('eCompanyName').value = '';
     document.getElementById('eDueDate').value = '';
     document.getElementById('eRemark').value = '';
     document.getElementById('entryModalError').textContent = '';
-    entryModalBackdrop.classList.add('open');
+    addEntryForm.classList.add('open');
     document.getElementById('eCompanyName').focus();
   });
-  function closeEntryModal(){ entryModalBackdrop.classList.remove('open'); }
-  document.getElementById('closeEntryModal').addEventListener('click', closeEntryModal);
-  document.getElementById('cancelEntryModal').addEventListener('click', closeEntryModal);
-  entryModalBackdrop.addEventListener('click', (e) => { if (e.target === entryModalBackdrop) closeEntryModal(); });
+  function closeEntryForm(){ addEntryForm.classList.remove('open'); }
+  document.getElementById('cancelEntryForm').addEventListener('click', closeEntryForm);
 
   document.getElementById('saveEntryBtn').addEventListener('click', async () => {
     const company_name = document.getElementById('eCompanyName').value.trim();
@@ -564,7 +608,7 @@
     }
 
     btn.disabled = false; btn.textContent = 'Save';
-    closeEntryModal();
+    closeEntryForm();
     showToast(`${company_name} added.`);
     await loadFormEntries();
   });
