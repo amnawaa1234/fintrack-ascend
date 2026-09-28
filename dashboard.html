@@ -232,6 +232,14 @@
   .earlier-list.open{display:flex;}
   .no-remarks{font-size:12px; color:var(--muted); margin-bottom:8px;}
 
+  .admin-col{display:none;}
+  body.admin-view .admin-col{display:table-cell;}
+  .delete-btn{
+    background:none; border:1px solid transparent; border-radius:6px; padding:5px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; color:var(--red);
+  }
+  .delete-btn:hover{background:var(--red-bg); border-color:#F5C2C2;}
+  .delete-btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
   .add-remark-btn{
     width:24px; height:24px; border-radius:50%; border:1px solid var(--line); background:#fff;
     color:var(--navy); font-size:15px; line-height:1; cursor:pointer; display:inline-flex;
@@ -273,7 +281,7 @@
 
   <main>
     <div class="dash-search-wrap">
-      <input type="text" id="dashSearchInput" placeholder="Search company name...">
+      <input type="text" id="dashSearchInput" placeholder="Search company / client name...">
       <div class="dash-search-results" id="dashSearchResults"></div>
     </div>
 
@@ -298,7 +306,7 @@
         <h3 id="addEntryTitle">New client</h3>
         <div class="add-entry-grid">
           <div>
-            <label for="eCompanyName">Company name</label>
+            <label for="eCompanyName" id="eCompanyLabel">Company name</label>
             <input type="text" id="eCompanyName" placeholder="e.g. Meridian Holdings Sdn Bhd">
           </div>
           <div id="eDueWrap">
@@ -324,18 +332,31 @@
         <table class="list-table">
           <thead>
             <tr>
-              <th style="width:20%;">Company Name</th>
+              <th style="width:20%;" id="thName">Company Name</th>
               <th style="width:12%;">Due Date</th>
               <th style="width:13%;">Status</th>
               <th>Remarks</th>
+              <th class="admin-col" style="width:44px;"></th>
             </tr>
           </thead>
-          <tbody id="listTableBody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+          <tbody id="listTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
   </main>
 
+</div>
+
+<!-- Delete confirmation modal (admin only) -->
+<div class="modal-backdrop" id="deleteConfirmBackdrop">
+  <div class="modal" style="max-width:380px;">
+    <h2 id="deleteConfirmTitle">Delete this company?</h2>
+    <p class="modal-sub" id="deleteConfirmText"></p>
+    <div class="modal-actions">
+      <button id="deleteCancelBtn">Cancel</button>
+      <button class="danger" id="deleteConfirmBtn">Delete</button>
+    </div>
+  </div>
 </div>
 
 <!-- Remark confirmation modal -->
@@ -361,11 +382,12 @@
   let profilesMap = {};
 
   const FORMS = [
-    { key: 'form_c',  label: 'Form C' },
-    { key: 'form_be', label: 'Form BE' }
+    { key: 'form_c',  label: 'Form C',  entity: 'Company' },
+    { key: 'form_be', label: 'Form BE', entity: 'Client' }
   ];
   let formData = { form_c: [], form_be: [] };
   let currentListFormType = null;
+  const entityOf = key => (FORMS.find(f => f.key === key) || {}).entity || 'Company';
   let pendingRemark = null; // { entryId, body }
 
   const isAdmin = () => currentProfile && currentProfile.role === 'head';
@@ -533,6 +555,9 @@
     document.getElementById('listPanelTitle').textContent = f.label + (showArchive ? ' — Archive' : '');
     document.getElementById('listArchiveBtn').textContent = showArchive ? '← Current list' : '🗂 Archive';
     document.getElementById('listAddBtn').style.display = showArchive ? 'none' : '';
+    const ent = entityOf(currentListFormType);
+    document.getElementById('thName').textContent = `${ent} Name`;
+    document.getElementById('listSearchInput').placeholder = `Search ${ent.toLowerCase()} name...`;
     const note = document.getElementById('formNote');
     note.textContent = FORM_BE_NOTE;
     note.classList.toggle('show', currentListFormType === 'form_be' && !showArchive);
@@ -561,7 +586,7 @@
     const rows = getFilteredEntries(currentListFormType);
     body.innerHTML = rows.length
       ? rows.map(entryRowHtml).join('')
-      : `<tr><td colspan="4" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
+      : `<tr><td colspan="5" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
 
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
@@ -570,6 +595,14 @@
       const id = btn.dataset.entry;
       if (expandedEarlier.has(id)) expandedEarlier.delete(id); else expandedEarlier.add(id);
       renderListTable();
+    }));
+    body.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => {
+      pendingDelete = { id: btn.dataset.entry, name: btn.dataset.name };
+      const ent = entityOf(currentListFormType).toLowerCase();
+      document.getElementById('deleteConfirmTitle').textContent = `Delete this ${ent}?`;
+      document.getElementById('deleteConfirmText').innerHTML =
+        `Are you sure you want to delete this ${ent}? <strong>${escapeHtml(btn.dataset.name)}</strong> and all its remarks will be permanently removed. This cannot be undone.`;
+      document.getElementById('deleteConfirmBackdrop').classList.add('open');
     }));
     body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
   }
@@ -624,6 +657,11 @@
             </div>
           </div>
         </td>
+        <td class="admin-col">
+          <button type="button" class="delete-btn" data-entry="${entry.id}" data-name="${escapeHtml(entry.company_name)}" title="Delete ${entityOf(entry.form_type).toLowerCase()}">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </td>
       </tr>`;
   }
 
@@ -653,6 +691,28 @@
     document.getElementById('remarkConfirmBackdrop').classList.add('open');
   }
 
+  /* ---------------- Delete company/client (admin only) ---------------- */
+  let pendingDelete = null;
+  document.getElementById('deleteCancelBtn').addEventListener('click', () => {
+    pendingDelete = null;
+    document.getElementById('deleteConfirmBackdrop').classList.remove('open');
+  });
+  document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+    if (!pendingDelete || !isAdmin()) return;
+    const btn = document.getElementById('deleteConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    const { data, error } = await sb.from('form_entries').delete().eq('id', pendingDelete.id).select();
+    btn.disabled = false; btn.textContent = 'Delete';
+    document.getElementById('deleteConfirmBackdrop').classList.remove('open');
+    if (error || !data || !data.length) {
+      showToast('Could not delete: ' + (error ? error.message : 'not allowed (admin only).'));
+    } else {
+      showToast(`${pendingDelete.name} deleted.`);
+    }
+    pendingDelete = null;
+    await loadFormEntries();
+  });
+
   document.getElementById('remarkCancelBtn').addEventListener('click', () => {
     pendingRemark = null;
     document.getElementById('remarkConfirmBackdrop').classList.remove('open');
@@ -681,6 +741,9 @@
     document.getElementById('eCompanyName').value = '';
     document.getElementById('eDueDate').value = '';
     setupDueFields(currentListFormType);
+    const entName = entityOf(currentListFormType);
+    document.getElementById('eCompanyLabel').textContent = `${entName} name`;
+    document.getElementById('eCompanyName').placeholder = currentListFormType === 'form_be' ? 'e.g. Ahmad bin Ismail' : 'e.g. Meridian Holdings Sdn Bhd';
     document.getElementById('eRemark').value = '';
     document.getElementById('entryModalError').textContent = '';
     addEntryForm.classList.add('open');
@@ -755,7 +818,7 @@
     const f = FORMS.find(x => x.key === currentListFormType);
     const rows = getFilteredEntries(currentListFormType);
     const data = rows.map(e => ({
-      'Company Name': e.company_name,
+      [`${entityOf(currentListFormType)} Name`]: e.company_name,
       'Due Date': formatDateDMY(e.due_date),
       'Status': e.status === 'completed' ? 'COMPLETED' : 'PENDING',
       'Status Changed': formatDateDMY(e.status_changed_at ? e.status_changed_at.slice(0, 10) : e.created_at.slice(0, 10)),
