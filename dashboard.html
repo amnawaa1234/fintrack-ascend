@@ -124,6 +124,10 @@
   .list-panel.open{display:block;}
   .list-panel-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
   .list-panel-header h2{font-size:16px; font-weight:600; margin:0;}
+  .form-note{display:none; color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:-8px 0 14px;}
+  .form-note.show{display:block;}
+  .due-preview{padding:9px 11px; font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:6px; color:var(--ink);}
+  .add-entry-form select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:inherit; background:#fff;}
 
   /* ---- Modals (shared — still used for Add client + remark confirmation) ---- */
   .modal-backdrop{
@@ -281,9 +285,11 @@
         <h2 id="listPanelTitle">Form C</h2>
         <span class="close-x" id="closeListPanel" title="Collapse">&times;</span>
       </div>
+      <div class="form-note" id="formNote"></div>
 
       <div class="list-toolbar">
         <input type="text" id="listSearchInput" placeholder="Search company name...">
+        <button id="listArchiveBtn">🗂 Archive</button>
         <button id="listExportBtn">⬇ Export Excel</button>
         <button class="primary" id="listAddBtn">+ Add client</button>
       </div>
@@ -295,9 +301,14 @@
             <label for="eCompanyName">Company name</label>
             <input type="text" id="eCompanyName" placeholder="e.g. Meridian Holdings Sdn Bhd">
           </div>
-          <div>
+          <div id="eDueWrap">
             <label for="eDueDate">Due date</label>
             <input type="date" id="eDueDate">
+          </div>
+          <div id="eYAWrap" style="display:none;">
+            <label for="eYA">Year of Assessment (YA)</label>
+            <select id="eYA"></select>
+            <div class="due-preview" id="eDuePreview" style="margin-top:8px;"></div>
           </div>
         </div>
         <label for="eRemark">Remarks (optional)</label>
@@ -319,7 +330,7 @@
               <th>Remarks</th>
             </tr>
           </thead>
-          <tbody id="listTableBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+          <tbody id="listTableBody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -435,7 +446,7 @@
     const grid = document.getElementById('widgetGrid');
     grid.innerHTML = widgetOrder.map(key => {
       const f = FORMS.find(x => x.key === key);
-      const count = (formData[key] || []).length;
+      const count = activeEntries(key).length;
       const activeCls = key === currentListFormType ? ' active' : '';
       return `
         <div class="widget-card${activeCls}" draggable="true" data-form="${key}">
@@ -474,10 +485,29 @@
   /* ---------------- Inline form list panel ---------------- */
   const listPanel = document.getElementById('listPanel');
   let listSearchTerm = '';
+  let showArchive = false;
+
+  // --- Config -------------------------------------------------------------
+  // Form BE due date is fixed each year: this day/month, in (YA + 1).
+  // (Statutory manual-filing deadline is 30 April; 20 April is the internal target.)
+  const FORM_BE_DUE = { day: '20', month: '04' };
+  const FORM_BE_NOTE = 'Form BE is only to be added when Form EA is ready for the client.';
+  // On 1 Jan, entries due in earlier years move to the Archive once COMPLETED.
+  // Set to false to archive PENDING ones too (not recommended: unfinished work disappears).
+  const KEEP_PENDING_ON_NEW_YEAR = true;
+
+  function isArchived(entry){
+    if (!entry.due_date) return false;
+    const dueYear = parseInt(entry.due_date.slice(0, 4), 10);
+    if (dueYear >= new Date().getFullYear()) return false;
+    if (KEEP_PENDING_ON_NEW_YEAR && entry.status !== 'completed') return false;
+    return true;
+  }
+  const activeEntries = key => (formData[key] || []).filter(e => !isArchived(e));
   const expandedEarlier = new Set(); // entry ids whose earlier remarks are expanded
 
   function getFilteredEntries(formType){
-    const rows = formData[formType] || [];
+    const rows = (formData[formType] || []).filter(e => isArchived(e) === showArchive);
     if (!listSearchTerm) return rows;
     return rows.filter(e => e.company_name.toLowerCase().includes(listSearchTerm.toLowerCase()));
   }
@@ -490,12 +520,29 @@
     document.getElementById('listSearchInput').value = '';
     closeEntryForm();
     const f = FORMS.find(x => x.key === formType);
-    document.getElementById('listPanelTitle').textContent = f.label;
+    showArchive = false;
+    updateListChrome();
     renderListTable();
     listPanel.classList.add('open');
     markActiveWidget();
     listPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+  function updateListChrome(){
+    const f = FORMS.find(x => x.key === currentListFormType);
+    if (!f) return;
+    document.getElementById('listPanelTitle').textContent = f.label + (showArchive ? ' — Archive' : '');
+    document.getElementById('listArchiveBtn').textContent = showArchive ? '← Current list' : '🗂 Archive';
+    document.getElementById('listAddBtn').style.display = showArchive ? 'none' : '';
+    const note = document.getElementById('formNote');
+    note.textContent = FORM_BE_NOTE;
+    note.classList.toggle('show', currentListFormType === 'form_be' && !showArchive);
+  }
+  document.getElementById('listArchiveBtn').addEventListener('click', () => {
+    showArchive = !showArchive;
+    closeEntryForm();
+    updateListChrome();
+    renderListTable();
+  });
   function closeListPanel(){
     listPanel.classList.remove('open');
     currentListFormType = null;
@@ -514,7 +561,7 @@
     const rows = getFilteredEntries(currentListFormType);
     body.innerHTML = rows.length
       ? rows.map(entryRowHtml).join('')
-      : `<tr><td colspan="3" class="empty-state">No entries yet. Click "+ Add client" to add one.</td></tr>`;
+      : `<tr><td colspan="4" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
 
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
@@ -633,17 +680,40 @@
     document.getElementById('addEntryTitle').textContent = `New client — ${f.label}`;
     document.getElementById('eCompanyName').value = '';
     document.getElementById('eDueDate').value = '';
+    setupDueFields(currentListFormType);
     document.getElementById('eRemark').value = '';
     document.getElementById('entryModalError').textContent = '';
     addEntryForm.classList.add('open');
     document.getElementById('eCompanyName').focus();
   });
+  function defaultYA(){
+    const now = new Date();
+    return now.getMonth() <= 3 ? now.getFullYear() - 1 : now.getFullYear(); // Jan–Apr still files for last year's YA
+  }
+  function beDueDate(ya){ return `${ya + 1}-${FORM_BE_DUE.month}-${FORM_BE_DUE.day}`; }
+  function setupDueFields(formType){
+    const isBE = formType === 'form_be';
+    document.getElementById('eDueWrap').style.display = isBE ? 'none' : '';
+    document.getElementById('eYAWrap').style.display = isBE ? '' : 'none';
+    if (!isBE) return;
+    const d = defaultYA();
+    const sel = document.getElementById('eYA');
+    sel.innerHTML = [d - 1, d, d + 1].map(y => `<option value="${y}" ${y === d ? 'selected' : ''}>YA ${y}</option>`).join('');
+    updateDuePreview();
+  }
+  function updateDuePreview(){
+    const ya = parseInt(document.getElementById('eYA').value, 10);
+    document.getElementById('eDuePreview').textContent = `Due date: ${formatDateDMY(beDueDate(ya))}`;
+  }
+  document.getElementById('eYA').addEventListener('change', updateDuePreview);
   function closeEntryForm(){ addEntryForm.classList.remove('open'); }
   document.getElementById('cancelEntryForm').addEventListener('click', closeEntryForm);
 
   document.getElementById('saveEntryBtn').addEventListener('click', async () => {
     const company_name = document.getElementById('eCompanyName').value.trim();
-    const due_date = document.getElementById('eDueDate').value || null;
+    const due_date = currentListFormType === 'form_be'
+      ? beDueDate(parseInt(document.getElementById('eYA').value, 10))
+      : (document.getElementById('eDueDate').value || null);
     const remark = document.getElementById('eRemark').value.trim();
     const errEl = document.getElementById('entryModalError');
     if (!company_name) { errEl.textContent = 'Enter a company name.'; return; }
@@ -707,7 +777,7 @@
     if (!term) { dashSearchResults.classList.remove('open'); dashSearchResults.innerHTML = ''; return; }
     const matches = [];
     FORMS.forEach(f => {
-      (formData[f.key] || []).forEach(entry => {
+      activeEntries(f.key).forEach(entry => {
         if (entry.company_name.toLowerCase().includes(term)) matches.push({ entry, form: f });
       });
     });
