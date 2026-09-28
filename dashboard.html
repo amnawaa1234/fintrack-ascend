@@ -196,7 +196,7 @@
   .status-cell{white-space:nowrap;}
   .status-select{
     appearance:none; -webkit-appearance:none; border:none; border-radius:20px; padding:5px 26px 5px 12px;
-    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; text-transform:uppercase; letter-spacing:.03em;
     background-repeat:no-repeat; background-position:right 9px center; background-size:9px;
   }
   .status-select:focus{outline:2px solid rgba(43,76,126,.25);}
@@ -215,9 +215,17 @@
   .remarks-list{display:flex; flex-direction:column; gap:8px; margin-bottom:8px;}
   .remark-item{background:var(--grey-bg); border-radius:7px; padding:9px 11px;}
   .remark-text{
-    font-style:italic; font-size:13.5px; line-height:1.6; color:var(--ink); white-space:pre-wrap; word-break:break-word;
+    font-style:italic; font-size:12px; line-height:1.5; color:var(--ink); white-space:pre-wrap; word-break:break-word;
   }
-  .remark-meta{font-style:normal; font-size:11px; color:var(--muted); margin-top:5px;}
+  .remark-meta{font-style:normal; font-size:10px; color:var(--muted); margin-top:4px;}
+  .remark-item{padding:7px 10px;}
+  .earlier-toggle{
+    background:none; border:none; padding:2px 0; font-size:11px; font-weight:600; color:var(--navy);
+    cursor:pointer; font-family:inherit; text-align:left;
+  }
+  .earlier-toggle:hover{text-decoration:underline;}
+  .earlier-list{display:none; flex-direction:column; gap:8px;}
+  .earlier-list.open{display:flex;}
   .no-remarks{font-size:12px; color:var(--muted); margin-bottom:8px;}
 
   .add-remark-btn{
@@ -466,6 +474,7 @@
   /* ---------------- Inline form list panel ---------------- */
   const listPanel = document.getElementById('listPanel');
   let listSearchTerm = '';
+  const expandedEarlier = new Set(); // entry ids whose earlier remarks are expanded
 
   function getFilteredEntries(formType){
     const rows = formData[formType] || [];
@@ -510,6 +519,11 @@
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
     body.querySelectorAll('.submit-remark-btn').forEach(btn => btn.addEventListener('click', () => onSubmitRemark(btn.dataset.entry)));
+    body.querySelectorAll('.earlier-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.entry;
+      if (expandedEarlier.has(id)) expandedEarlier.delete(id); else expandedEarlier.add(id);
+      renderListTable();
+    }));
     body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
   }
 
@@ -525,17 +539,30 @@
     const due = formatDateDMY(entry.due_date);
     const status = entry.status === 'completed' ? 'completed' : 'pending';
     const remarks = entry.form_remarks || [];
-    const remarksHtml = remarks.length
-      ? remarks.map(remarkItemHtml).join('')
-      : `<div class="no-remarks">No remarks yet.</div>`;
+    let remarksHtml;
+    if (!remarks.length) {
+      remarksHtml = `<div class="no-remarks">No remarks yet.</div>`;
+    } else {
+      const latest = remarks[remarks.length - 1];
+      const earlier = remarks.slice(0, -1).reverse(); // newest first
+      const open = expandedEarlier.has(entry.id);
+      remarksHtml = remarkItemHtml(latest);
+      if (earlier.length) {
+        remarksHtml += `
+          <button type="button" class="earlier-toggle" data-entry="${entry.id}">
+            ${open ? '▾ Hide' : '▸ Show'} ${earlier.length} earlier remark${earlier.length > 1 ? 's' : ''}
+          </button>
+          <div class="earlier-list${open ? ' open' : ''}">${earlier.map(remarkItemHtml).join('')}</div>`;
+      }
+    }
     return `
       <tr>
         <td class="company-cell">${escapeHtml(entry.company_name)}</td>
         <td class="due-cell">${due}</td>
         <td class="status-cell">
           <select class="status-select status-${status}" data-entry="${entry.id}">
-            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
-            <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+            <option value="pending" ${status === 'pending' ? 'selected' : ''}>PENDING</option>
+            <option value="completed" ${status === 'completed' ? 'selected' : ''}>COMPLETED</option>
           </select>
           <div class="status-date">Changed on ${formatDateDMY(entry.status_changed_at ? entry.status_changed_at.slice(0, 10) : entry.created_at.slice(0, 10))}</div>
         </td>
@@ -660,7 +687,7 @@
     const data = rows.map(e => ({
       'Company Name': e.company_name,
       'Due Date': formatDateDMY(e.due_date),
-      'Status': e.status === 'completed' ? 'Completed' : 'Pending',
+      'Status': e.status === 'completed' ? 'COMPLETED' : 'PENDING',
       'Status Changed': formatDateDMY(e.status_changed_at ? e.status_changed_at.slice(0, 10) : e.created_at.slice(0, 10)),
       'Remarks': (e.form_remarks || []).map(r =>
         `${r.body} — ${profilesMap[r.author_id] || 'Unknown'} (${formatTimeMeta(r.created_at)})`
