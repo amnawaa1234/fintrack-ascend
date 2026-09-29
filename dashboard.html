@@ -383,9 +383,10 @@
 
   const FORMS = [
     { key: 'form_c',  label: 'Form C',  entity: 'Company' },
-    { key: 'form_be', label: 'Form BE', entity: 'Client' }
+    { key: 'form_be', label: 'Form BE', entity: 'Client' },
+    { key: 'form_e',  label: 'Form E',  entity: 'Company' }
   ];
-  let formData = { form_c: [], form_be: [] };
+  let formData = { form_c: [], form_be: [], form_e: [] };
   let currentListFormType = null;
   const entityOf = key => (FORMS.find(f => f.key === key) || {}).entity || 'Company';
   let pendingRemark = null; // { entryId, body }
