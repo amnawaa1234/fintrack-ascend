@@ -126,6 +126,16 @@
   .list-panel-header h2{font-size:16px; font-weight:600; margin:0;}
   .form-note{display:none; color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:-8px 0 14px;}
   .form-note.show{display:block;}
+  .list-body-row{display:flex; gap:20px; align-items:flex-start;}
+  .month-sidebar{display:none; flex-direction:column; gap:4px; flex-shrink:0; width:100px;}
+  .month-sidebar.show{display:flex;}
+  .month-btn{
+    padding:7px 10px; border:1px solid var(--line); background:#fff; border-radius:6px;
+    font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; text-align:left; font-family:inherit;
+  }
+  .month-btn:hover{border-color:var(--navy); color:var(--navy);}
+  .month-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .list-main{flex:1; min-width:0;}
   .due-preview{padding:9px 11px; font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:6px; color:var(--ink);}
   .add-entry-form select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:inherit; background:#fff;}
 
@@ -307,27 +317,16 @@
       </div>
       <div class="form-note" id="formNote"></div>
 
+      <div class="list-body-row">
+        <div class="month-sidebar" id="monthSidebar"></div>
+        <div class="list-main">
+
       <div class="list-toolbar">
         <input type="text" id="listSearchInput" placeholder="Search company name...">
         <select id="listSortSelect">
           <option value="due">Sort: Due date</option>
           <option value="az">Sort: Name A–Z</option>
           <option value="za">Sort: Name Z–A</option>
-        </select>
-        <select id="listMonthSelect">
-          <option value="">All months</option>
-          <option value="1">January</option>
-          <option value="2">February</option>
-          <option value="3">March</option>
-          <option value="4">April</option>
-          <option value="5">May</option>
-          <option value="6">June</option>
-          <option value="7">July</option>
-          <option value="8">August</option>
-          <option value="9">September</option>
-          <option value="10">October</option>
-          <option value="11">November</option>
-          <option value="12">December</option>
         </select>
         <button id="listArchiveBtn">🗂 Archive</button>
         <button id="listExportBtn">⬇ Export Excel</button>
@@ -375,6 +374,9 @@
           </thead>
           <tbody id="listTableBody"><tr><td colspan="5" class="empty-state">Loading...</td></tr></tbody>
         </table>
+      </div>
+
+        </div>
       </div>
     </div>
   </main>
@@ -599,12 +601,23 @@
       renderListTable();
     }));
   }
+
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function renderMonthSidebar(){
+    const el = document.getElementById('monthSidebar');
+    const isFormC = currentListFormType === 'form_c';
+    el.classList.toggle('show', isFormC);
+    if (!isFormC) { el.innerHTML = ''; return; }
+    el.innerHTML = `<button type="button" class="month-btn${listMonthFilter === null ? ' active' : ''}" data-month="">All</button>` +
+      MONTHS.map((m, i) => `<button type="button" class="month-btn${listMonthFilter === i + 1 ? ' active' : ''}" data-month="${i + 1}">${m}</button>`).join('');
+    el.querySelectorAll('.month-btn').forEach(btn => btn.addEventListener('click', () => {
+      listMonthFilter = btn.dataset.month ? parseInt(btn.dataset.month, 10) : null;
+      renderMonthSidebar();
+      renderListTable();
+    }));
+  }
   document.getElementById('listSortSelect').addEventListener('change', (e) => {
     listSortMode = e.target.value;
-    renderListTable();
-  });
-  document.getElementById('listMonthSelect').addEventListener('change', (e) => {
-    listMonthFilter = e.target.value ? parseInt(e.target.value, 10) : null;
     renderListTable();
   });
 
@@ -618,8 +631,8 @@
     document.getElementById('listSortSelect').value = 'due';
     listLetterFilter = null;
     listMonthFilter = null;
-    document.getElementById('listMonthSelect').value = '';
     renderLetterFilter();
+    renderMonthSidebar();
     closeEntryForm();
     const f = FORMS.find(x => x.key === formType);
     showArchive = false;
