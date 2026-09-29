@@ -126,6 +126,21 @@
   .list-panel-header h2{font-size:16px; font-weight:600; margin:0;}
   .form-note{display:none; color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:-8px 0 14px;}
   .form-note.show{display:block;}
+
+  /* ---- EA -> BE workflow tabs (Form BE widget only) ---- */
+  .group-tabs{display:none; gap:6px; margin-bottom:18px; border-bottom:1px solid var(--line);}
+  .group-tab{
+    padding:9px 16px; border:none; background:none; font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .group-tab:hover{color:var(--ink);}
+  .group-tab.active{color:var(--navy); border-bottom-color:var(--navy);}
+  .finish-btn{
+    padding:6px 14px; border-radius:6px; border:1px solid var(--navy); background:var(--navy); color:#fff;
+    font-size:12px; font-weight:600; font-family:inherit; cursor:pointer;
+  }
+  .finish-btn:disabled{background:#fff; color:var(--muted); border-color:var(--line); cursor:not-allowed;}
+  .ea-note{color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:8px 0 0;}
   .list-body-row{display:flex; gap:20px; align-items:flex-start;}
   .month-sidebar{display:none; flex-direction:column; gap:4px; flex-shrink:0; width:100px;}
   .month-sidebar.show{display:flex;}
@@ -315,8 +330,64 @@
         <h2 id="listPanelTitle">Form C</h2>
         <span class="close-x" id="closeListPanel" title="Collapse">&times;</span>
       </div>
-      <div class="form-note" id="formNote"></div>
 
+      <div class="group-tabs" id="groupTabs">
+        <button type="button" class="group-tab" data-view="ea">EA</button>
+        <button type="button" class="group-tab" data-view="be">BE</button>
+        <button type="button" class="group-tab" data-view="list">List</button>
+      </div>
+
+      <!-- Step 1: Form EA (only for the Form BE widget) -->
+      <div class="ea-view" id="eaView" style="display:none;">
+        <div class="list-toolbar">
+          <button class="primary" id="eaAddBtn">+ Add client</button>
+        </div>
+
+        <div class="add-entry-form" id="eaAddForm">
+          <h3>New client — Form EA</h3>
+          <label for="eaClientName">Client name</label>
+          <input type="text" id="eaClientName" placeholder="e.g. Ahmad bin Ismail">
+          <div class="ea-note">Form EA Distribution: Must be given to employees by 28 February.</div>
+          <div class="modal-error" id="eaFormError"></div>
+          <div class="add-entry-actions">
+            <button id="eaCancelBtn">Cancel</button>
+            <button class="primary" id="eaSaveBtn">Save</button>
+          </div>
+        </div>
+
+        <div class="list-table-wrap">
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th style="width:34%;">Client Name</th>
+                <th style="width:16%;">Due Date</th>
+                <th style="width:20%;">Finalize</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="eaTableBody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Step 2: Form BE, minimal view (only for the Form BE widget) -->
+      <div class="be-view" id="beView" style="display:none;">
+        <div class="list-table-wrap">
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th style="width:40%;">Client Name</th>
+                <th style="width:18%;">Due Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="beTableBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- List: the full-featured view (Form C / Form E always show this directly; Form BE shows it under the "List" tab) -->
+      <div class="list-view" id="listViewContent">
       <div class="list-body-row">
         <div class="month-sidebar" id="monthSidebar"></div>
         <div class="list-main">
@@ -378,6 +449,7 @@
 
         </div>
       </div>
+      </div>
     </div>
   </main>
 
@@ -418,11 +490,13 @@
   let profilesMap = {};
 
   const FORMS = [
-    { key: 'form_c',  label: 'Form C',  entity: 'Company' },
-    { key: 'form_be', label: 'Form BE', entity: 'Client' },
-    { key: 'form_e',  label: 'Form E',  entity: 'Company' }
+    { key: 'form_c',  label: 'Form C',       entity: 'Company' },
+    { key: 'form_be', label: 'Form EA / BE', entity: 'Client' },
+    { key: 'form_e',  label: 'Form E',       entity: 'Company' }
   ];
   let formData = { form_c: [], form_be: [], form_e: [] };
+  let eaEntries = []; // Form EA entries (form_type = 'form_ea'), not a widget of its own — lives inside the Form BE workflow
+  let beGroupView = 'ea'; // 'ea' | 'be' | 'list' — which tab is showing inside the Form BE widget
   let currentListFormType = null;
   const entityOf = key => (FORMS.find(f => f.key === key) || {}).entity || 'Company';
   let pendingRemark = null; // { entryId, body }
@@ -491,8 +565,15 @@
       });
       formData[f.key] = data || [];
     }
+
+    const { data: eaData, error: eaError } = await sb.from('form_entries')
+      .select('*')
+      .eq('form_type', 'form_ea')
+      .order('due_date', { ascending: true, nullsFirst: false });
+    eaEntries = eaError ? [] : (eaData || []);
+
     renderWidgets();
-    if (currentListFormType) renderListTable();
+    if (currentListFormType) renderCurrentPanel();
   }
 
   /* ---------------- Widget cards (sortable drag & drop) ---------------- */
@@ -554,7 +635,6 @@
   // Form BE due date is fixed each year: this day/month, in (YA + 1).
   // (Statutory manual-filing deadline is 30 April; 20 April is the internal target.)
   const FORM_BE_DUE = { day: '20', month: '04' };
-  const FORM_BE_NOTE = 'Form BE is only to be added when Form EA is ready for the client.';
   // On 1 Jan, entries due in earlier years move to the Archive once COMPLETED.
   // Set to false to archive PENDING ones too (not recommended: unfinished work disappears).
   const KEEP_PENDING_ON_NEW_YEAR = true;
@@ -634,26 +714,45 @@
     renderLetterFilter();
     renderMonthSidebar();
     closeEntryForm();
-    const f = FORMS.find(x => x.key === formType);
+    closeEaForm();
+    beGroupView = 'ea';
     showArchive = false;
     updateListChrome();
-    renderListTable();
+    renderCurrentPanel();
     listPanel.classList.add('open');
     markActiveWidget();
     listPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+  function renderCurrentPanel(){
+    if (!currentListFormType) return;
+    const isGroup = currentListFormType === 'form_be';
+    document.getElementById('groupTabs').style.display = isGroup ? 'flex' : 'none';
+    document.getElementById('eaView').style.display = (isGroup && beGroupView === 'ea') ? '' : 'none';
+    document.getElementById('beView').style.display = (isGroup && beGroupView === 'be') ? '' : 'none';
+    document.getElementById('listViewContent').style.display = (!isGroup || beGroupView === 'list') ? '' : 'none';
+    if (isGroup) {
+      document.querySelectorAll('.group-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === beGroupView));
+      if (beGroupView === 'ea') { renderEaTable(); return; }
+      if (beGroupView === 'be') { renderBeTable(); return; }
+    }
+    renderListTable();
+  }
+  document.querySelectorAll('.group-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      beGroupView = btn.dataset.view;
+      renderCurrentPanel();
+    });
+  });
   function updateListChrome(){
     const f = FORMS.find(x => x.key === currentListFormType);
     if (!f) return;
     document.getElementById('listPanelTitle').textContent = f.label + (showArchive ? ' — Archive' : '');
     document.getElementById('listArchiveBtn').textContent = showArchive ? '← Current list' : '🗂 Archive';
-    document.getElementById('listAddBtn').style.display = showArchive ? 'none' : '';
+    const isBEGroup = currentListFormType === 'form_be';
+    document.getElementById('listAddBtn').style.display = (showArchive || isBEGroup) ? 'none' : '';
     const ent = entityOf(currentListFormType);
     document.getElementById('thName').textContent = `${ent} Name`;
     document.getElementById('listSearchInput').placeholder = `Search ${ent.toLowerCase()} name...`;
-    const note = document.getElementById('formNote');
-    note.textContent = FORM_BE_NOTE;
-    note.classList.toggle('show', currentListFormType === 'form_be' && !showArchive);
   }
   document.getElementById('listArchiveBtn').addEventListener('click', () => {
     showArchive = !showArchive;
@@ -665,6 +764,8 @@
     listPanel.classList.remove('open');
     currentListFormType = null;
     closeEntryForm();
+    closeEaForm();
+    beGroupView = 'ea';
     markActiveWidget();
   }
   function markActiveWidget(){
@@ -923,6 +1024,121 @@
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, f.label);
     XLSX.writeFile(wb, `${f.label.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  });
+
+  /* ---------------- Form EA -> BE workflow (inside the Form BE widget) ---------------- */
+  function nextFeb14(){
+    // Auto-picks the closest upcoming 14 Feb — no YA picker needed for Form EA.
+    const now = new Date();
+    let year = now.getFullYear();
+    if (now > new Date(year, 1, 14)) year += 1; // month 1 = February
+    return `${year}-02-14`;
+  }
+
+  function sortByDue(rows){
+    return rows.slice().sort((a, b) => {
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return a.due_date.localeCompare(b.due_date);
+    });
+  }
+
+  function statusCellHtml(entry){
+    const status = entry.status === 'completed' ? 'completed' : 'pending';
+    const changed = entry.status_changed_at ? entry.status_changed_at.slice(0, 10) : entry.created_at.slice(0, 10);
+    return `
+      <select class="status-select status-${status}" data-entry="${entry.id}">
+        <option value="pending" ${status === 'pending' ? 'selected' : ''}>PENDING</option>
+        <option value="completed" ${status === 'completed' ? 'selected' : ''}>COMPLETED</option>
+      </select>
+      <div class="status-date">Changed on ${formatDateDMY(changed)}</div>`;
+  }
+
+  function renderEaTable(){
+    const body = document.getElementById('eaTableBody');
+    const rows = sortByDue(eaEntries);
+    body.innerHTML = rows.length
+      ? rows.map(entry => `
+          <tr>
+            <td class="company-cell">${escapeHtml(entry.company_name)}</td>
+            <td class="due-cell">${formatDateDMY(entry.due_date)}</td>
+            <td class="status-cell">${statusCellHtml(entry)}</td>
+            <td><button type="button" class="finish-btn" data-entry="${entry.id}" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button></td>
+          </tr>`).join('')
+      : `<tr><td colspan="4" class="empty-state">No Form EA clients yet. Click "+ Add client" to add one.</td></tr>`;
+
+    body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
+    body.querySelectorAll('.finish-btn').forEach(btn => btn.addEventListener('click', () => onFinishClick(btn.dataset.entry)));
+  }
+
+  function renderBeTable(){
+    const body = document.getElementById('beTableBody');
+    const rows = sortByDue(formData.form_be || []);
+    body.innerHTML = rows.length
+      ? rows.map(entry => `
+          <tr>
+            <td class="company-cell">${escapeHtml(entry.company_name)}</td>
+            <td class="due-cell">${formatDateDMY(entry.due_date)}</td>
+            <td class="status-cell">${statusCellHtml(entry)}</td>
+          </tr>`).join('')
+      : `<tr><td colspan="3" class="empty-state">No Form BE clients yet — finish a Form EA client to add one.</td></tr>`;
+
+    body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
+  }
+
+  async function onFinishClick(eaId){
+    const ea = eaEntries.find(e => e.id === eaId);
+    if (!ea || ea.status !== 'completed') return;
+
+    const nameLower = ea.company_name.trim().toLowerCase();
+    const existing = (formData.form_be || []).find(b => b.company_name.trim().toLowerCase() === nameLower);
+    if (existing) {
+      showToast(`A Form BE entry already exists for ${ea.company_name}.`);
+      beGroupView = 'be';
+      renderCurrentPanel();
+      return;
+    }
+
+    const ya = parseInt(ea.due_date.slice(0, 4), 10) - 1; // ea.due_date year is YA + 1
+    const { error } = await sb.from('form_entries').insert({
+      form_type: 'form_be', company_name: ea.company_name, due_date: beDueDate(ya),
+      parent_id: ea.id, created_by: currentUser.id
+    });
+    if (error) { showToast('Could not create the Form BE entry: ' + error.message); return; }
+
+    showToast(`${ea.company_name} moved to Form BE.`);
+    beGroupView = 'be';
+    await loadFormEntries();
+  }
+
+  /* ---------------- Inline add-client form (Form EA) ---------------- */
+  const eaAddForm = document.getElementById('eaAddForm');
+  function closeEaForm(){ eaAddForm.classList.remove('open'); }
+  document.getElementById('eaAddBtn').addEventListener('click', () => {
+    if (eaAddForm.classList.contains('open')) { closeEaForm(); return; }
+    document.getElementById('eaClientName').value = '';
+    document.getElementById('eaFormError').textContent = '';
+    eaAddForm.classList.add('open');
+    document.getElementById('eaClientName').focus();
+  });
+  document.getElementById('eaCancelBtn').addEventListener('click', closeEaForm);
+  document.getElementById('eaSaveBtn').addEventListener('click', async () => {
+    const company_name = document.getElementById('eaClientName').value.trim();
+    const errEl = document.getElementById('eaFormError');
+    if (!company_name) { errEl.textContent = 'Enter a client name.'; return; }
+
+    const btn = document.getElementById('eaSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    const { error } = await sb.from('form_entries').insert({
+      form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id
+    });
+    btn.disabled = false; btn.textContent = 'Save';
+    if (error) { errEl.textContent = 'Could not save: ' + error.message; return; }
+
+    closeEaForm();
+    showToast(`${company_name} added to Form EA.`);
+    await loadFormEntries();
   });
 
   /* ---------------- Dashboard search (quick finder across both forms) ---------------- */
