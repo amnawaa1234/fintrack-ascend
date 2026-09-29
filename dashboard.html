@@ -141,6 +141,14 @@
   }
   .finish-btn:disabled{background:#fff; color:var(--muted); border-color:var(--line); cursor:not-allowed;}
   .ea-note{color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:8px 0 0;}
+  .add-triple-row{display:flex; justify-content:center; gap:10px; margin-bottom:18px;}
+  .triple-btn{
+    padding:9px 16px; border:1px solid var(--line); background:#fff; border-radius:7px;
+    font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; font-family:inherit;
+  }
+  .triple-btn:hover{border-color:var(--navy); color:var(--navy);}
+  .triple-btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .triple-btn.primary:hover{background:var(--navy-dark); color:#fff;}
   .list-body-row{display:flex; gap:20px; align-items:flex-start;}
   .month-sidebar{display:none; flex-direction:column; gap:4px; flex-shrink:0; width:100px;}
   .month-sidebar.show{display:flex;}
@@ -337,36 +345,46 @@
         <button type="button" class="group-tab" data-view="list">List</button>
       </div>
 
+      <div class="add-triple-row" id="addTripleRow">
+        <button type="button" class="triple-btn" data-mode="ea">+ Add EA</button>
+        <button type="button" class="triple-btn" data-mode="be">+ Add BE</button>
+        <button type="button" class="triple-btn primary" data-mode="both">+ Add EA+BE</button>
+      </div>
+      <div class="add-entry-form" id="tripleAddForm">
+        <h3 id="tripleAddTitle">New client</h3>
+        <label for="tripleClientName">Client name</label>
+        <input type="text" id="tripleClientName" placeholder="e.g. Ahmad bin Ismail">
+        <div class="ea-note" id="tripleNote"></div>
+        <div class="modal-error" id="tripleFormError"></div>
+        <div class="add-entry-actions">
+          <button id="tripleCancelBtn">Cancel</button>
+          <button class="primary" id="tripleSaveBtn">Save</button>
+        </div>
+      </div>
+
       <!-- Step 1: Form EA (only for the Form BE widget) -->
       <div class="ea-view" id="eaView" style="display:none;">
-        <div class="list-toolbar">
-          <button class="primary" id="eaAddBtn">+ Add client</button>
-        </div>
-
-        <div class="add-entry-form" id="eaAddForm">
-          <h3>New client — Form EA</h3>
-          <label for="eaClientName">Client name</label>
-          <input type="text" id="eaClientName" placeholder="e.g. Ahmad bin Ismail">
-          <div class="ea-note">Form EA Distribution: Must be given to employees by 28 February.</div>
-          <div class="modal-error" id="eaFormError"></div>
-          <div class="add-entry-actions">
-            <button id="eaCancelBtn">Cancel</button>
-            <button class="primary" id="eaSaveBtn">Save</button>
+        <div class="list-body-row">
+          <div class="month-sidebar show" id="eaStatusSidebar">
+            <button type="button" class="month-btn active" data-status="">All</button>
+            <button type="button" class="month-btn" data-status="pending">PENDING</button>
+            <button type="button" class="month-btn" data-status="completed">COMPLETED</button>
           </div>
-        </div>
-
-        <div class="list-table-wrap">
-          <table class="list-table">
-            <thead>
-              <tr>
-                <th style="width:34%;">Client Name</th>
-                <th style="width:16%;">Due Date</th>
-                <th style="width:20%;">Finalize</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="eaTableBody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
-          </table>
+          <div class="list-main">
+            <div class="list-table-wrap">
+              <table class="list-table">
+                <thead>
+                  <tr>
+                    <th style="width:34%;">Client Name</th>
+                    <th style="width:16%;">Due Date</th>
+                    <th style="width:20%;">Finalize</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="eaTableBody"><tr><td colspan="4" class="empty-state">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -395,6 +413,7 @@
       <div class="list-toolbar">
         <input type="text" id="listSearchInput" placeholder="Search company name...">
         <select id="listSortSelect">
+          <option value="newest">Sort: Newest added</option>
           <option value="due">Sort: Due date</option>
           <option value="az">Sort: Name A–Z</option>
           <option value="za">Sort: Name Z–A</option>
@@ -626,9 +645,10 @@
   const listPanel = document.getElementById('listPanel');
   let listSearchTerm = '';
   let showArchive = false;
-  let listSortMode = 'due';      // 'due' | 'az' | 'za'
+  let listSortMode = 'newest';   // 'newest' | 'due' | 'az' | 'za'
   let listLetterFilter = null;   // 'A'..'Z' or null
   let listMonthFilter = null;    // 1-12 (due-date month) or null
+  let eaStatusFilter = null;     // null | 'pending' | 'completed' (Form EA tab sidebar)
   const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
   // --- Config -------------------------------------------------------------
@@ -656,7 +676,9 @@
     if (listMonthFilter) rows = rows.filter(e => e.due_date && parseInt(e.due_date.slice(5, 7), 10) === listMonthFilter);
 
     rows = rows.slice();
-    if (listSortMode === 'az') {
+    if (listSortMode === 'newest') {
+      rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else if (listSortMode === 'az') {
       rows.sort((a, b) => a.company_name.localeCompare(b.company_name));
     } else if (listSortMode === 'za') {
       rows.sort((a, b) => b.company_name.localeCompare(a.company_name));
@@ -707,14 +729,15 @@
     currentListFormType = formType;
     listSearchTerm = '';
     document.getElementById('listSearchInput').value = '';
-    listSortMode = 'due';
-    document.getElementById('listSortSelect').value = 'due';
+    listSortMode = 'newest';
+    document.getElementById('listSortSelect').value = 'newest';
     listLetterFilter = null;
     listMonthFilter = null;
+    eaStatusFilter = null;
     renderLetterFilter();
     renderMonthSidebar();
     closeEntryForm();
-    closeEaForm();
+    closeTripleForm();
     beGroupView = 'ea';
     showArchive = false;
     updateListChrome();
@@ -750,6 +773,7 @@
     document.getElementById('listArchiveBtn').textContent = showArchive ? '← Current list' : '🗂 Archive';
     const isBEGroup = currentListFormType === 'form_be';
     document.getElementById('listAddBtn').style.display = (showArchive || isBEGroup) ? 'none' : '';
+    document.getElementById('addTripleRow').style.display = isBEGroup ? 'flex' : 'none';
     const ent = entityOf(currentListFormType);
     document.getElementById('thName').textContent = `${ent} Name`;
     document.getElementById('listSearchInput').placeholder = `Search ${ent.toLowerCase()} name...`;
@@ -764,7 +788,7 @@
     listPanel.classList.remove('open');
     currentListFormType = null;
     closeEntryForm();
-    closeEaForm();
+    closeTripleForm();
     beGroupView = 'ea';
     markActiveWidget();
   }
@@ -1034,14 +1058,17 @@
     if (now > new Date(year, 1, 14)) year += 1; // month 1 = February
     return `${year}-02-14`;
   }
+  function nextApril20(){
+    // Auto-picks the closest upcoming 20 April — used by the standalone "+ Add BE" button.
+    const now = new Date();
+    let year = now.getFullYear();
+    if (now > new Date(year, 3, 20)) year += 1; // month 3 = April
+    return `${year}-04-20`;
+  }
 
-  function sortByDue(rows){
-    return rows.slice().sort((a, b) => {
-      if (!a.due_date && !b.due_date) return 0;
-      if (!a.due_date) return 1;
-      if (!b.due_date) return -1;
-      return a.due_date.localeCompare(b.due_date);
-    });
+  function sortNewestFirst(rows){
+    // Newly added clients show at the top of every list.
+    return rows.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
   function statusCellHtml(entry){
@@ -1056,8 +1083,13 @@
   }
 
   function renderEaTable(){
+    document.querySelectorAll('#eaStatusSidebar .month-btn').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.status || null) === eaStatusFilter);
+    });
     const body = document.getElementById('eaTableBody');
-    const rows = sortByDue(eaEntries);
+    let rows = eaEntries;
+    if (eaStatusFilter) rows = rows.filter(e => (e.status === 'completed' ? 'completed' : 'pending') === eaStatusFilter);
+    rows = sortNewestFirst(rows);
     body.innerHTML = rows.length
       ? rows.map(entry => `
           <tr>
@@ -1066,15 +1098,21 @@
             <td class="status-cell">${statusCellHtml(entry)}</td>
             <td><button type="button" class="finish-btn" data-entry="${entry.id}" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button></td>
           </tr>`).join('')
-      : `<tr><td colspan="4" class="empty-state">No Form EA clients yet. Click "+ Add client" to add one.</td></tr>`;
+      : `<tr><td colspan="4" class="empty-state">No Form EA clients yet. Click "+ Add EA" to add one.</td></tr>`;
 
     body.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
     body.querySelectorAll('.finish-btn').forEach(btn => btn.addEventListener('click', () => onFinishClick(btn.dataset.entry)));
   }
+  document.querySelectorAll('#eaStatusSidebar .month-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      eaStatusFilter = btn.dataset.status || null;
+      renderEaTable();
+    });
+  });
 
   function renderBeTable(){
     const body = document.getElementById('beTableBody');
-    const rows = sortByDue(formData.form_be || []);
+    const rows = sortNewestFirst(formData.form_be || []);
     body.innerHTML = rows.length
       ? rows.map(entry => `
           <tr>
@@ -1113,31 +1151,67 @@
   }
 
   /* ---------------- Inline add-client form (Form EA) ---------------- */
-  const eaAddForm = document.getElementById('eaAddForm');
-  function closeEaForm(){ eaAddForm.classList.remove('open'); }
-  document.getElementById('eaAddBtn').addEventListener('click', () => {
-    if (eaAddForm.classList.contains('open')) { closeEaForm(); return; }
-    document.getElementById('eaClientName').value = '';
-    document.getElementById('eaFormError').textContent = '';
-    eaAddForm.classList.add('open');
-    document.getElementById('eaClientName').focus();
+  /* ---------------- Inline add-client form (Add EA / Add BE / Add EA+BE) ---------------- */
+  let tripleMode = 'ea';
+  const tripleAddForm = document.getElementById('tripleAddForm');
+  const TRIPLE_TITLES = { ea: 'New client — Form EA', be: 'New client — Form BE', both: 'New client — Form EA + BE' };
+  const TRIPLE_NOTES = {
+    ea: 'Deadline is set to 14 February for early finalization as Form EA must be given to employees by 28 February.',
+    be: 'Deadline is set to 20 April for early progress as submission for BE manual filing is by 30 April.',
+    both: 'Deadline is set to 14 February (Form EA) and 20 April (Form BE) for early progress.'
+  };
+  function closeTripleForm(){ tripleAddForm.classList.remove('open'); }
+  document.querySelectorAll('.triple-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (tripleAddForm.classList.contains('open') && tripleMode === mode) { closeTripleForm(); return; }
+      tripleMode = mode;
+      document.getElementById('tripleClientName').value = '';
+      document.getElementById('tripleFormError').textContent = '';
+      document.getElementById('tripleAddTitle').textContent = TRIPLE_TITLES[mode];
+      document.getElementById('tripleNote').textContent = TRIPLE_NOTES[mode];
+      tripleAddForm.classList.add('open');
+      document.getElementById('tripleClientName').focus();
+    });
   });
-  document.getElementById('eaCancelBtn').addEventListener('click', closeEaForm);
-  document.getElementById('eaSaveBtn').addEventListener('click', async () => {
-    const company_name = document.getElementById('eaClientName').value.trim();
-    const errEl = document.getElementById('eaFormError');
+  document.getElementById('tripleCancelBtn').addEventListener('click', closeTripleForm);
+  document.getElementById('tripleSaveBtn').addEventListener('click', async () => {
+    const company_name = document.getElementById('tripleClientName').value.trim();
+    const errEl = document.getElementById('tripleFormError');
     if (!company_name) { errEl.textContent = 'Enter a client name.'; return; }
 
-    const btn = document.getElementById('eaSaveBtn');
+    const btn = document.getElementById('tripleSaveBtn');
     btn.disabled = true; btn.textContent = 'Saving...';
-    const { error } = await sb.from('form_entries').insert({
-      form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id
-    });
+
+    let error = null;
+    if (tripleMode === 'ea') {
+      ({ error } = await sb.from('form_entries').insert({
+        form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id
+      }));
+    } else if (tripleMode === 'be') {
+      ({ error } = await sb.from('form_entries').insert({
+        form_type: 'form_be', company_name, due_date: nextApril20(), created_by: currentUser.id
+      }));
+    } else {
+      const eaDue = nextFeb14();
+      const beDue = `${eaDue.slice(0, 4)}-04-20`; // same year as EA, so BE always falls after EA
+      const { data: eaRow, error: eaErr } = await sb.from('form_entries')
+        .insert({ form_type: 'form_ea', company_name, due_date: eaDue, created_by: currentUser.id })
+        .select().single();
+      if (eaErr) {
+        error = eaErr;
+      } else {
+        ({ error } = await sb.from('form_entries').insert({
+          form_type: 'form_be', company_name, due_date: beDue, parent_id: eaRow.id, created_by: currentUser.id
+        }));
+      }
+    }
+
     btn.disabled = false; btn.textContent = 'Save';
     if (error) { errEl.textContent = 'Could not save: ' + error.message; return; }
 
-    closeEaForm();
-    showToast(`${company_name} added to Form EA.`);
+    closeTripleForm();
+    showToast(`${company_name} added.`);
     await loadFormEntries();
   });
 
