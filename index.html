@@ -25,10 +25,9 @@
     border-radius:10px; padding:36px 32px;
   }
   .mark{
-    width:36px; height:36px; border-radius:8px; background:var(--navy);
-    display:flex; align-items:center; justify-content:center; margin-bottom:20px;
+    width:40px; height:40px; margin-bottom:20px;
   }
-  .mark span{width:10px;height:10px;border-radius:50%;background:#fff;}
+  .mark img{width:100%; height:100%; display:block;}
   h1{font-size:20px; font-weight:600; margin:0 0 4px;}
   p.sub{color:var(--muted); font-size:14px; margin:0 0 28px;}
   label{display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--ink);}
@@ -37,6 +36,16 @@
     font-size:14px; font-family:inherit; margin-bottom:16px; background:#fcfcfb;
   }
   input:focus{outline:none; border-color:var(--navy);}
+  .password-wrap{position:relative;}
+  .password-wrap input{padding-right:42px;}
+  .eye-toggle{
+    position:absolute; top:0; right:0; height:100%; width:40px; margin-bottom:16px;
+    background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--muted); padding:0;
+  }
+  .eye-toggle:hover{color:var(--ink);}
+  .eye-toggle svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+  .eye-toggle .eye-off{display:none;}
   button{
     width:100%; padding:11px; background:var(--navy); color:#fff; border:none;
     border-radius:7px; font-size:14px; font-weight:600; font-family:inherit;
@@ -53,9 +62,9 @@
 <body>
 
 <div class="card">
-  <div class="mark"><span></span></div>
+  <div class="mark"><img src="icon.svg" alt="TaxBase"></div>
   <h1>TaxBase</h1>
-  <p class="sub">Ascend Advisory Group — sign in with your staff account.</p>
+  <p class="sub">Ascend Advisory Group — sign in with your registered account.</p>
 
   <div class="error" id="errorBox"></div>
 
@@ -63,7 +72,13 @@
     <label for="staffId">Staff ID</label>
     <input type="text" id="staffId" required autocomplete="username" placeholder="e.g. ST1023">
     <label for="password">Password</label>
-    <input type="password" id="password" required autocomplete="current-password">
+    <div class="password-wrap">
+      <input type="password" id="password" required autocomplete="current-password">
+      <button type="button" class="eye-toggle" id="eyeToggle" aria-label="Show password">
+        <svg class="eye-on" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.3 20.3 0 0 1 5.06-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 7 11 7a20.3 20.3 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+      </button>
+    </div>
     <button type="submit" id="submitBtn">Sign in</button>
   </form>
 </div>
@@ -85,6 +100,16 @@
     errorBox.textContent = msg;
     errorBox.style.display = 'block';
   }
+
+  const eyeToggle = document.getElementById('eyeToggle');
+  const passwordInput = document.getElementById('password');
+  eyeToggle.addEventListener('click', () => {
+    const showing = passwordInput.type === 'text';
+    passwordInput.type = showing ? 'password' : 'text';
+    eyeToggle.querySelector('.eye-on').style.display = showing ? '' : 'none';
+    eyeToggle.querySelector('.eye-off').style.display = showing ? 'none' : '';
+    eyeToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  });
 
   // If already logged in and authorized, skip straight to dashboard
   (async () => {
@@ -112,7 +137,7 @@
     }
 
     // Confirm this account belongs to staff or the head of department
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await sb
       .from('profiles')
       .select('role')
       .eq('id', data.user.id)
