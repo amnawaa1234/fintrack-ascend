@@ -169,6 +169,18 @@
   .list-toolbar button:hover{border-color:var(--navy); color:var(--navy);}
   .list-toolbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
   .list-toolbar button.primary:hover{background:var(--navy-dark); color:#fff;}
+  .list-toolbar select{
+    padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;
+    font-family:inherit; background:#fff; color:var(--ink); cursor:pointer;
+  }
+  .list-toolbar select:focus{outline:none; border-color:var(--navy);}
+  .letter-filter{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px;}
+  .letter-btn{
+    min-width:26px; height:26px; padding:0 6px; border:1px solid var(--line); background:#fff;
+    border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--muted);
+  }
+  .letter-btn:hover{border-color:var(--navy); color:var(--navy);}
+  .letter-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
 
   /* ---- Inline add-client form (inside the list panel) ---- */
   .add-entry-form{display:none; border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:16px; background:#FAFAF8;}
@@ -297,10 +309,32 @@
 
       <div class="list-toolbar">
         <input type="text" id="listSearchInput" placeholder="Search company name...">
+        <select id="listSortSelect">
+          <option value="due">Sort: Due date</option>
+          <option value="az">Sort: Name A–Z</option>
+          <option value="za">Sort: Name Z–A</option>
+        </select>
+        <select id="listMonthSelect">
+          <option value="">All months</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
         <button id="listArchiveBtn">🗂 Archive</button>
         <button id="listExportBtn">⬇ Export Excel</button>
         <button class="primary" id="listAddBtn">+ Add client</button>
       </div>
+
+      <div class="letter-filter" id="letterFilter"></div>
 
       <div class="add-entry-form" id="addEntryForm">
         <h3 id="addEntryTitle">New client</h3>
@@ -509,6 +543,10 @@
   const listPanel = document.getElementById('listPanel');
   let listSearchTerm = '';
   let showArchive = false;
+  let listSortMode = 'due';      // 'due' | 'az' | 'za'
+  let listLetterFilter = null;   // 'A'..'Z' or null
+  let listMonthFilter = null;    // 1-12 (due-date month) or null
+  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
   // --- Config -------------------------------------------------------------
   // Form BE due date is fixed each year: this day/month, in (YA + 1).
@@ -530,10 +568,45 @@
   const expandedEarlier = new Set(); // entry ids whose earlier remarks are expanded
 
   function getFilteredEntries(formType){
-    const rows = (formData[formType] || []).filter(e => isArchived(e) === showArchive);
-    if (!listSearchTerm) return rows;
-    return rows.filter(e => e.company_name.toLowerCase().includes(listSearchTerm.toLowerCase()));
+    let rows = (formData[formType] || []).filter(e => isArchived(e) === showArchive);
+    if (listSearchTerm) rows = rows.filter(e => e.company_name.toLowerCase().includes(listSearchTerm.toLowerCase()));
+    if (listLetterFilter) rows = rows.filter(e => e.company_name.trim().charAt(0).toUpperCase() === listLetterFilter);
+    if (listMonthFilter) rows = rows.filter(e => e.due_date && parseInt(e.due_date.slice(5, 7), 10) === listMonthFilter);
+
+    rows = rows.slice();
+    if (listSortMode === 'az') {
+      rows.sort((a, b) => a.company_name.localeCompare(b.company_name));
+    } else if (listSortMode === 'za') {
+      rows.sort((a, b) => b.company_name.localeCompare(a.company_name));
+    } else {
+      rows.sort((a, b) => {
+        if (!a.due_date && !b.due_date) return 0;
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return a.due_date.localeCompare(b.due_date);
+      });
+    }
+    return rows;
   }
+
+  function renderLetterFilter(){
+    const el = document.getElementById('letterFilter');
+    el.innerHTML = `<button type="button" class="letter-btn${listLetterFilter === null ? ' active' : ''}" data-letter="">All</button>` +
+      LETTERS.map(l => `<button type="button" class="letter-btn${listLetterFilter === l ? ' active' : ''}" data-letter="${l}">${l}</button>`).join('');
+    el.querySelectorAll('.letter-btn').forEach(btn => btn.addEventListener('click', () => {
+      listLetterFilter = btn.dataset.letter || null;
+      renderLetterFilter();
+      renderListTable();
+    }));
+  }
+  document.getElementById('listSortSelect').addEventListener('change', (e) => {
+    listSortMode = e.target.value;
+    renderListTable();
+  });
+  document.getElementById('listMonthSelect').addEventListener('change', (e) => {
+    listMonthFilter = e.target.value ? parseInt(e.target.value, 10) : null;
+    renderListTable();
+  });
 
   function openFormList(formType){
     // Clicking the widget that's already open collapses the panel instead.
@@ -541,6 +614,12 @@
     currentListFormType = formType;
     listSearchTerm = '';
     document.getElementById('listSearchInput').value = '';
+    listSortMode = 'due';
+    document.getElementById('listSortSelect').value = 'due';
+    listLetterFilter = null;
+    listMonthFilter = null;
+    document.getElementById('listMonthSelect').value = '';
+    renderLetterFilter();
     closeEntryForm();
     const f = FORMS.find(x => x.key === formType);
     showArchive = false;
