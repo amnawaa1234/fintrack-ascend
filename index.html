@@ -36,15 +36,17 @@
     font-size:14px; font-family:inherit; margin-bottom:16px; background:#fcfcfb;
   }
   input:focus{outline:none; border-color:var(--navy);}
-  .password-wrap{position:relative;}
-  .password-wrap input{padding-right:42px;}
-  .eye-toggle{
-    position:absolute; top:0; right:0; height:100%; width:40px; margin-bottom:16px;
-    background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    color:var(--muted); padding:0;
+  .password-wrap{position:relative; margin-bottom:16px;}
+  .password-wrap input{margin-bottom:0 !important; padding-right:42px;}
+  button.eye-toggle{
+    position:absolute; top:50%; right:6px; transform:translateY(-50%);
+    width:30px !important; height:30px !important; margin:0 !important; padding:0 !important;
+    background:transparent !important; border:none !important; border-radius:6px !important;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--muted); cursor:pointer;
   }
-  .eye-toggle:hover{color:var(--ink);}
-  .eye-toggle svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+  button.eye-toggle:hover{background:#EDEFF3 !important; color:var(--ink);}
+  .eye-toggle svg{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
   .eye-toggle .eye-off{display:none;}
   button{
     width:100%; padding:11px; background:var(--navy); color:#fff; border:none;
