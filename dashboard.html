@@ -832,9 +832,18 @@
           <div class="earlier-list${open ? ' open' : ''}">${earlier.map(remarkItemHtml).join('')}</div>`;
       }
     }
+
+    let beTag = '';
+    if (entry.form_type === 'form_ea' && entry.requires_be) {
+      const linked = (formData.form_be || []).some(b => b.parent_id === entry.id);
+      beTag = linked
+        ? `<div class="ea-note" style="color:var(--green); margin-top:4px; white-space:normal;">✓ BE created</div>`
+        : `<div class="ea-note" style="margin-top:4px; white-space:normal;">⚠ BE required for this client</div>`;
+    }
+
     return `
       <tr>
-        <td class="company-cell">${escapeHtml(entry.company_name)}</td>
+        <td class="company-cell">${escapeHtml(entry.company_name)}${beTag}</td>
         <td class="due-cell">${due}</td>
         <td class="status-cell">
           <select class="status-select status-${status}" data-entry="${entry.id}">
@@ -1112,8 +1121,10 @@
     } else {
       // 'ea' and 'both' both create only the Form EA entry — "both" still requires
       // Finalize -> Finish before its Form BE entry is created, same as any other EA client.
+      // requires_be flags it so the EA list can show a "BE required" tag in the meantime.
       ({ error } = await sb.from('form_entries').insert({
-        form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id
+        form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id,
+        requires_be: tripleMode === 'both'
       }));
     }
 
