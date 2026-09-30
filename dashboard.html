@@ -864,7 +864,7 @@
             </div>
           </div>
         </td>
-        <td class="finish-col">${entry.form_type === 'form_ea' ? `<button type="button" class="finish-btn" data-entry="${entry.id}" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button>` : ''}</td>
+        <td class="finish-col">${(entry.form_type === 'form_ea' && entry.requires_be) ? `<button type="button" class="finish-btn" data-entry="${entry.id}" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button>` : ''}</td>
         <td class="admin-col">
           <button type="button" class="delete-btn" data-entry="${entry.id}" data-name="${escapeHtml(entry.company_name)}" title="Delete ${entityOf(entry.form_type).toLowerCase()}">
             <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
