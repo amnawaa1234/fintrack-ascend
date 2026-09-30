@@ -280,6 +280,7 @@
   .admin-col{display:none;}
   body.admin-view .admin-col{display:table-cell;}
   .finish-col{display:none;}
+  .list-table.show-finish-col .finish-col{display:table-cell;}
   .delete-btn{
     background:none; border:1px solid transparent; border-radius:6px; padding:5px; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center; color:var(--red);
@@ -754,7 +755,7 @@
     document.getElementById('thName').textContent = `${ent} Name`;
     document.getElementById('listSearchInput').placeholder = `Search ${ent.toLowerCase()} name...`;
     document.getElementById('thStatus').textContent = key === 'form_ea' ? 'Finalize' : 'Status';
-    document.querySelectorAll('.finish-col').forEach(el => { el.style.display = key === 'form_ea' ? 'table-cell' : 'none'; });
+    document.querySelector('.list-table').classList.toggle('show-finish-col', key === 'form_ea');
   }
   document.getElementById('listArchiveBtn').addEventListener('click', () => {
     showArchive = !showArchive;
