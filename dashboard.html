@@ -478,6 +478,16 @@
   </div>
 </div>
 
+<!-- Due-date reminder modal -->
+<div class="modal-backdrop" id="reminderBackdrop">
+  <div class="modal" style="max-width:380px;">
+    <p class="modal-sub" id="reminderText" style="margin-bottom:0;"></p>
+    <div class="modal-actions">
+      <button class="primary" id="reminderGotItBtn">Got it</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = "https://peqzoyzxdrsjovpmuirm.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_ePzp2ldvvl1eh5EGlPdCzg__gnBEnwV";
@@ -755,6 +765,7 @@
     closeTripleForm();
     activeSubForm = 'form_ea';
     showArchive = false;
+    remindedKey = null; // clicking a form fresh — show its due-date reminder again
     renderCurrentPanel();
     listPanel.classList.add('open');
     markActiveWidget();
@@ -772,7 +783,37 @@
     renderSidebar();
     renderLetterFilter();
     renderListTable();
+    maybeShowReminder();
   }
+
+  /* ---------------- Due-date reminder (shown once per form-open, not on every refresh) ---------------- */
+  let remindedKey = null;
+  const REMINDER_FORMS = ['form_ea', 'form_be', 'form_e'];
+  function maybeShowReminder(){
+    const key = currentDataKey();
+    if (!key || !REMINDER_FORMS.includes(key) || key === remindedKey) return;
+    remindedKey = key;
+
+    const pending = activeEntries(key).filter(e => e.status !== 'completed' && e.due_date);
+    if (!pending.length) return;
+    const soonest = pending.reduce((a, b) => (a.due_date < b.due_date ? a : b));
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const due = new Date(soonest.due_date + 'T00:00:00');
+    const diffDays = Math.round((due - today) / 86400000);
+    const dueStr = formatDateDMY(soonest.due_date);
+
+    const body = diffDays >= 0
+      ? `${diffDays} day${diffDays === 1 ? '' : 's'} left until ${dueStr}.`
+      : `overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'} (was due ${dueStr}).`;
+
+    document.getElementById('reminderText').innerHTML =
+      `<b>Reminder!</b> ${body} Please complete and submit all required tasks in the system before the due date to avoid delays.`;
+    document.getElementById('reminderBackdrop').classList.add('open');
+  }
+  document.getElementById('reminderGotItBtn').addEventListener('click', () => {
+    document.getElementById('reminderBackdrop').classList.remove('open');
+  });
   document.querySelectorAll('.group-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeSubForm = btn.dataset.view;
@@ -785,6 +826,7 @@
       showArchive = false;
       closeEntryForm();
       closeTripleForm();
+      remindedKey = null; // switching into EA or BE tab — show its due-date reminder again
       renderCurrentPanel();
     });
   });
@@ -957,9 +999,9 @@
         </td>
         <td class="finish-col">${entry.form_type === 'form_ea' ? `
           <div class="ea-action-group">
-            ${entry.requires_be ? `<button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_be" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button>` : ''}
-            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_b" ${entry.status === 'completed' ? '' : 'disabled'}>Create B</button>
-            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_e" ${entry.status === 'completed' ? '' : 'disabled'}>Create E</button>
+            ${entry.requires_be ? `<button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_be" ${entry.status === 'completed' ? '' : 'disabled'}>Create BE</button>` : ''}
+            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_b" ${(entry.requires_be || entry.status !== 'completed') ? 'disabled' : ''}>Create B</button>
+            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_e" ${(entry.requires_be || entry.status !== 'completed') ? 'disabled' : ''}>Create E</button>
           </div>` : ''}</td>
         <td class="admin-col">
           <button type="button" class="delete-btn" data-entry="${entry.id}" data-name="${escapeHtml(entry.company_name)}" title="Delete ${entityOf(entry.form_type).toLowerCase()}">
