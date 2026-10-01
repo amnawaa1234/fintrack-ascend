@@ -140,6 +140,8 @@
     font-size:12px; font-weight:600; font-family:inherit; cursor:pointer;
   }
   .finish-btn:disabled{background:#fff; color:var(--muted); border-color:var(--line); cursor:not-allowed;}
+  .ea-action-group{display:flex; flex-direction:column; gap:5px; align-items:stretch;}
+  .ea-action-group .finish-btn{padding:5px 10px; white-space:nowrap;}
   .ea-note{color:var(--red); font-style:italic; font-size:12px; line-height:1.5; margin:8px 0 0;}
   .add-triple-row{display:flex; justify-content:center; gap:10px; margin-bottom:18px;}
   .triple-btn{
@@ -158,6 +160,7 @@
   }
   .month-btn:hover{border-color:var(--navy); color:var(--navy);}
   .month-btn.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .sidebar-section-label{font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:10px 0 2px;}
   .list-main{flex:1; min-width:0;}
   .due-preview{padding:9px 11px; font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:6px; color:var(--ink);}
   .add-entry-form select{width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:inherit; background:#fff;}
@@ -436,7 +439,7 @@
               <th class="sst-col" style="width:12%;">Client Paid On</th>
               <th class="sst-col" style="width:14%;">Make Payment to Customs</th>
               <th>Remarks</th>
-              <th class="finish-col" id="thFinish" style="width:80px;"></th>
+              <th class="finish-col" id="thFinish" style="width:110px;"></th>
               <th class="admin-col" style="width:44px;"></th>
             </tr>
           </thead>
@@ -489,9 +492,10 @@
     { key: 'form_c',   label: 'Form C',       entity: 'Company' },
     { key: 'form_be',  label: 'Form EA / BE', entity: 'Client' },
     { key: 'form_e',   label: 'Form E',       entity: 'Company' },
-    { key: 'form_sst', label: 'Form SST',     entity: 'Company' }
+    { key: 'form_sst', label: 'Form SST',     entity: 'Company' },
+    { key: 'form_b',   label: 'Form B',       entity: 'Company' }
   ];
-  let formData = { form_c: [], form_be: [], form_e: [], form_ea: [], form_sst: [] };
+  let formData = { form_c: [], form_be: [], form_e: [], form_ea: [], form_sst: [], form_b: [] };
   let activeSubForm = 'form_ea'; // 'form_ea' | 'form_be' — which tab is showing inside the Form EA/BE widget
   let currentListFormType = null;
   const entityOf = key => (key === 'form_ea' ? 'Client' : (FORMS.find(f => f.key === key) || {}).entity || 'Company');
@@ -650,7 +654,7 @@
     if (listSearchTerm) rows = rows.filter(e => e.company_name.toLowerCase().includes(listSearchTerm.toLowerCase()));
     if (listLetterFilter) rows = rows.filter(e => e.company_name.trim().charAt(0).toUpperCase() === listLetterFilter);
     if (listMonthFilter) rows = rows.filter(e => e.due_date && parseInt(e.due_date.slice(5, 7), 10) === listMonthFilter);
-    if (statusFilter && (formType === 'form_ea' || formType === 'form_be')) {
+    if (statusFilter && (formType === 'form_ea' || formType === 'form_be' || formType === 'form_sst')) {
       rows = rows.filter(e => (e.status === 'completed' ? 'completed' : 'pending') === statusFilter);
     }
 
@@ -702,6 +706,26 @@
         <button type="button" class="month-btn${statusFilter === 'pending' ? ' active' : ''}" data-status="pending">PENDING</button>
         <button type="button" class="month-btn${statusFilter === 'completed' ? ' active' : ''}" data-status="completed">COMPLETED</button>`;
       el.querySelectorAll('.month-btn').forEach(btn => btn.addEventListener('click', () => {
+        statusFilter = btn.dataset.status || null;
+        renderSidebar();
+        renderListTable();
+      }));
+    } else if (currentListFormType === 'form_sst') {
+      el.classList.add('show');
+      el.innerHTML = `
+        <div class="sidebar-section-label" style="margin-top:0;">Due Month</div>
+        <button type="button" class="month-btn month-filter-btn${listMonthFilter === null ? ' active' : ''}" data-month="">All</button>` +
+        MONTHS.map((m, i) => `<button type="button" class="month-btn month-filter-btn${listMonthFilter === i + 1 ? ' active' : ''}" data-month="${i + 1}">${m}</button>`).join('') +
+        `<div class="sidebar-section-label">Sales Summary</div>
+        <button type="button" class="month-btn status-filter-btn${statusFilter === null ? ' active' : ''}" data-status="">All</button>
+        <button type="button" class="month-btn status-filter-btn${statusFilter === 'pending' ? ' active' : ''}" data-status="pending">NOT RECEIVED</button>
+        <button type="button" class="month-btn status-filter-btn${statusFilter === 'completed' ? ' active' : ''}" data-status="completed">RECEIVED</button>`;
+      el.querySelectorAll('.month-filter-btn').forEach(btn => btn.addEventListener('click', () => {
+        listMonthFilter = btn.dataset.month ? parseInt(btn.dataset.month, 10) : null;
+        renderSidebar();
+        renderListTable();
+      }));
+      el.querySelectorAll('.status-filter-btn').forEach(btn => btn.addEventListener('click', () => {
         statusFilter = btn.dataset.status || null;
         renderSidebar();
         renderListTable();
@@ -828,7 +852,7 @@
       document.getElementById('deleteConfirmBackdrop').classList.add('open');
     }));
     body.querySelectorAll('.status-select:not(.e-field-select)').forEach(sel => sel.addEventListener('change', () => onStatusChange(sel.dataset.entry, sel.value)));
-    body.querySelectorAll('.finish-btn').forEach(btn => btn.addEventListener('click', () => onFinishClick(btn.dataset.entry)));
+    body.querySelectorAll('.finish-btn').forEach(btn => btn.addEventListener('click', () => onFinishClick(btn.dataset.entry, btn.dataset.target)));
     body.querySelectorAll('.e-field-select').forEach(sel => sel.addEventListener('change', () => onEFieldUpdate(sel.dataset.entry, sel.dataset.field, sel.value)));
     body.querySelectorAll('.e-date-input').forEach(inp => inp.addEventListener('change', () => onEFieldUpdate(inp.dataset.entry, inp.dataset.field, inp.value || null)));
     body.querySelectorAll('.e-today-btn').forEach(btn => btn.addEventListener('click', () => {
@@ -931,7 +955,12 @@
             </div>
           </div>
         </td>
-        <td class="finish-col">${(entry.form_type === 'form_ea' && entry.requires_be) ? `<button type="button" class="finish-btn" data-entry="${entry.id}" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button>` : ''}</td>
+        <td class="finish-col">${entry.form_type === 'form_ea' ? `
+          <div class="ea-action-group">
+            ${entry.requires_be ? `<button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_be" ${entry.status === 'completed' ? '' : 'disabled'}>Finish</button>` : ''}
+            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_b" ${entry.status === 'completed' ? '' : 'disabled'}>Create B</button>
+            <button type="button" class="finish-btn" data-entry="${entry.id}" data-target="form_e" ${entry.status === 'completed' ? '' : 'disabled'}>Create E</button>
+          </div>` : ''}</td>
         <td class="admin-col">
           <button type="button" class="delete-btn" data-entry="${entry.id}" data-name="${escapeHtml(entry.company_name)}" title="Delete ${entityOf(entry.form_type).toLowerCase()}">
             <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -1135,29 +1164,45 @@
     return `${year}-04-20`;
   }
 
-  async function onFinishClick(eaId){
-    const ea = (formData.form_ea || []).find(e => e.id === eaId);
-    if (!ea || ea.status !== 'completed') return;
+  const EA_TARGET_LABELS = { form_be: 'Form BE', form_b: 'Form B', form_e: 'Form E' };
 
+  async function onFinishClick(eaId, target){
+    const ea = (formData.form_ea || []).find(e => e.id === eaId);
+    if (!ea || ea.status !== 'completed' || !EA_TARGET_LABELS[target]) return;
+
+    const label = EA_TARGET_LABELS[target];
     const nameLower = ea.company_name.trim().toLowerCase();
-    const existing = (formData.form_be || []).find(b => b.company_name.trim().toLowerCase() === nameLower);
+    const existing = (formData[target] || []).find(b => b.company_name.trim().toLowerCase() === nameLower);
+
     if (existing) {
-      showToast(`A Form BE entry already exists for ${ea.company_name}.`);
-      activeSubForm = 'form_be';
-      renderCurrentPanel();
-      return;
+      showToast(`A ${label} entry already exists for ${ea.company_name}.`);
+    } else {
+      let due_date, extra = {};
+      if (target === 'form_be') {
+        const ya = parseInt(ea.due_date.slice(0, 4), 10) - 1; // ea.due_date year is YA + 1
+        due_date = beDueDate(ya);
+        extra = { parent_id: ea.id };
+      } else if (target === 'form_e') {
+        due_date = nextMarch2();
+      } else {
+        // Form B has no due-date rule of its own yet — default to the EA entry's own due date.
+        due_date = ea.due_date;
+      }
+      const { error } = await sb.from('form_entries').insert({
+        form_type: target, company_name: ea.company_name, due_date, created_by: currentUser.id, ...extra
+      });
+      if (error) { showToast(`Could not create the ${label} entry: ` + error.message); return; }
+      showToast(`${ea.company_name} moved to ${label}.`);
+      await loadFormEntries();
     }
 
-    const ya = parseInt(ea.due_date.slice(0, 4), 10) - 1; // ea.due_date year is YA + 1
-    const { error } = await sb.from('form_entries').insert({
-      form_type: 'form_be', company_name: ea.company_name, due_date: beDueDate(ya),
-      parent_id: ea.id, created_by: currentUser.id
-    });
-    if (error) { showToast('Could not create the Form BE entry: ' + error.message); return; }
-
-    showToast(`${ea.company_name} moved to Form BE.`);
-    activeSubForm = 'form_be';
-    await loadFormEntries();
+    if (target === 'form_be') {
+      // Already inside the Form EA/BE widget group — just switch tabs, don't reopen the widget.
+      activeSubForm = 'form_be';
+      renderCurrentPanel();
+    } else {
+      openFormList(target);
+    }
   }
 
   /* ---------------- Inline add-client form (Add EA / Add BE / Add EA+BE) ---------------- */
