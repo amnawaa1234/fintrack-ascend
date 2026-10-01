@@ -283,6 +283,8 @@
   .list-table.show-finish-col .finish-col{display:table-cell;}
   .e-col{display:none;}
   .list-table.show-e-col .e-col{display:table-cell;}
+  .sst-col{display:none;}
+  .list-table.show-sst-col .sst-col{display:table-cell;}
   .e-date-row{display:flex; align-items:center; gap:4px; margin-top:5px;}
   .e-date-input{
     font-size:11px; padding:3px 5px; border:1px solid var(--line); border-radius:5px;
@@ -430,12 +432,15 @@
               <th class="e-col" style="width:13%;">EA</th>
               <th class="e-col" style="width:15%;">Summary Salary</th>
               <th style="width:13%;" id="thStatus">Status</th>
+              <th class="sst-col" style="width:12%;">Process</th>
+              <th class="sst-col" style="width:12%;">Client Paid On</th>
+              <th class="sst-col" style="width:14%;">Make Payment to Customs</th>
               <th>Remarks</th>
               <th class="finish-col" id="thFinish" style="width:80px;"></th>
               <th class="admin-col" style="width:44px;"></th>
             </tr>
           </thead>
-          <tbody id="listTableBody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+          <tbody id="listTableBody"><tr><td colspan="11" class="empty-state">Loading...</td></tr></tbody>
         </table>
       </div>
 
@@ -481,11 +486,12 @@
   let profilesMap = {};
 
   const FORMS = [
-    { key: 'form_c',  label: 'Form C',       entity: 'Company' },
-    { key: 'form_be', label: 'Form EA / BE', entity: 'Client' },
-    { key: 'form_e',  label: 'Form E',       entity: 'Company' }
+    { key: 'form_c',   label: 'Form C',       entity: 'Company' },
+    { key: 'form_be',  label: 'Form EA / BE', entity: 'Client' },
+    { key: 'form_e',   label: 'Form E',       entity: 'Company' },
+    { key: 'form_sst', label: 'Form SST',     entity: 'Company' }
   ];
-  let formData = { form_c: [], form_be: [], form_e: [], form_ea: [] };
+  let formData = { form_c: [], form_be: [], form_e: [], form_ea: [], form_sst: [] };
   let activeSubForm = 'form_ea'; // 'form_ea' | 'form_be' — which tab is showing inside the Form EA/BE widget
   let currentListFormType = null;
   const entityOf = key => (key === 'form_ea' ? 'Client' : (FORMS.find(f => f.key === key) || {}).entity || 'Company');
@@ -769,10 +775,13 @@
     const ent = entityOf(key);
     document.getElementById('thName').textContent = `${ent} Name`;
     document.getElementById('listSearchInput').placeholder = `Search ${ent.toLowerCase()} name...`;
-    document.getElementById('thStatus').textContent = key === 'form_ea' ? 'Finalize' : (key === 'form_e' ? 'Submit to LHDN' : 'Status');
+    document.getElementById('thStatus').textContent =
+      key === 'form_ea' ? 'Finalize' : key === 'form_e' ? 'Submit to LHDN' : key === 'form_sst' ? 'Sales Summary' : 'Status';
     document.querySelector('.list-table').classList.toggle('show-finish-col', key === 'form_ea');
     document.querySelector('.list-table').classList.toggle('show-e-col', key === 'form_e');
-    document.getElementById('listAddBtn').textContent = key === 'form_e' ? '+ Add Form E' : '+ Add client';
+    document.querySelector('.list-table').classList.toggle('show-sst-col', key === 'form_sst');
+    document.getElementById('listAddBtn').textContent =
+      key === 'form_e' ? '+ Add Form E' : key === 'form_sst' ? '+ Add SST' : '+ Add client';
   }
   document.getElementById('listArchiveBtn').addEventListener('click', () => {
     showArchive = !showArchive;
@@ -800,7 +809,7 @@
     const rows = getFilteredEntries(currentDataKey());
     body.innerHTML = rows.length
       ? rows.map(entryRowHtml).join('')
-      : `<tr><td colspan="6" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
+      : `<tr><td colspan="11" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
 
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
@@ -842,6 +851,12 @@
     await loadFormEntries();
   }
 
+  function statusLabels(formType){
+    if (formType === 'form_e') return { pending: 'PENDING', completed: 'SUBMITTED' };
+    if (formType === 'form_sst') return { pending: 'NOT RECEIVED', completed: 'RECEIVED' };
+    return { pending: 'PENDING', completed: 'COMPLETED' };
+  }
+
   function entryRowHtml(entry){
     const due = formatDateDMY(entry.due_date);
     const status = entry.status === 'completed' ? 'completed' : 'pending';
@@ -871,8 +886,12 @@
         : `<div class="ea-note" style="margin-top:4px; white-space:normal;">⚠ BE required for this client</div>`;
     }
 
-    const isFormE = entry.form_type === 'form_e';
-    const completedLabel = isFormE ? 'SUBMITTED' : 'COMPLETED';
+    const labels = statusLabels(entry.form_type);
+    const simpleDateCell = (field, value) => `
+      <div class="e-date-row">
+        <input type="date" class="e-date-input" data-entry="${entry.id}" data-field="${field}" value="${value || ''}">
+        <button type="button" class="e-today-btn" data-entry="${entry.id}" data-field="${field}">Today</button>
+      </div>`;
     const eaReceived = entry.ea_received === 'received' ? 'received' : 'not_received';
     const salaryReceived = entry.salary_received === 'received' ? 'received' : 'not_received';
     const eCellHtml = (field, value, dateField, dateValue) => `
@@ -893,11 +912,14 @@
         <td class="e-col status-cell">${eCellHtml('salary_received', salaryReceived, 'salary_received_date', entry.salary_received_date)}</td>
         <td class="status-cell">
           <select class="status-select status-${status}" data-entry="${entry.id}">
-            <option value="pending" ${status === 'pending' ? 'selected' : ''}>PENDING</option>
-            <option value="completed" ${status === 'completed' ? 'selected' : ''}>${completedLabel}</option>
+            <option value="pending" ${status === 'pending' ? 'selected' : ''}>${labels.pending}</option>
+            <option value="completed" ${status === 'completed' ? 'selected' : ''}>${labels.completed}</option>
           </select>
           <div class="status-date">Changed on ${formatDateDMY(entry.status_changed_at ? entry.status_changed_at.slice(0, 10) : entry.created_at.slice(0, 10))}</div>
         </td>
+        <td class="sst-col">${simpleDateCell('process_date', entry.process_date)}</td>
+        <td class="sst-col">${simpleDateCell('client_paid_date', entry.client_paid_date)}</td>
+        <td class="sst-col">${simpleDateCell('customs_payment_date', entry.customs_payment_date)}</td>
         <td class="remarks-cell">
           <div class="remarks-list">${remarksHtml}</div>
           <button type="button" class="add-remark-btn" data-entry="${entry.id}" title="Add remark">+</button>
