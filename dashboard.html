@@ -368,7 +368,6 @@
 
       <div class="add-triple-row" id="addTripleRow">
         <button type="button" class="triple-btn" data-mode="ea">+ Add EA</button>
-        <button type="button" class="triple-btn" data-mode="be">+ Add BE</button>
         <button type="button" class="triple-btn primary" data-mode="both">+ Add EA+BE</button>
       </div>
       <div class="add-entry-form" id="tripleAddForm">
@@ -1242,14 +1241,6 @@
     if (now > new Date(year, 1, 14)) year += 1; // month 1 = February
     return `${year}-02-14`;
   }
-  function nextApril20(){
-    // Auto-picks the closest upcoming 20 April — used by the standalone "+ Add BE" button.
-    const now = new Date();
-    let year = now.getFullYear();
-    if (now > new Date(year, 3, 20)) year += 1; // month 3 = April
-    return `${year}-04-20`;
-  }
-
   const EA_TARGET_LABELS = { form_be: 'Form BE', form_b: 'Form B', form_e: 'Form E' };
 
   async function onFinishClick(eaId, target){
@@ -1294,10 +1285,9 @@
   /* ---------------- Inline add-client form (Add EA / Add BE / Add EA+BE) ---------------- */
   let tripleMode = 'ea';
   const tripleAddForm = document.getElementById('tripleAddForm');
-  const TRIPLE_TITLES = { ea: 'New client — Form EA', be: 'New client — Form BE', both: 'New client — Form EA + BE' };
+  const TRIPLE_TITLES = { ea: 'New client — Form EA', both: 'New client — Form EA + BE' };
   const TRIPLE_NOTES = {
     ea: 'Deadline is set to 14 February for early finalization as Form EA must be given to employees by 28 February.',
-    be: 'Deadline is set to 20 April for early progress as submission for BE manual filing is by 30 April.',
     both: 'Deadline is set to 14 February (Form EA) and 20 April (Form BE) for early progress.'
   };
   function closeTripleForm(){ tripleAddForm.classList.remove('open'); }
@@ -1323,27 +1313,20 @@
     const btn = document.getElementById('tripleSaveBtn');
     btn.disabled = true; btn.textContent = 'Saving...';
 
-    let error = null;
-    if (tripleMode === 'be') {
-      ({ error } = await sb.from('form_entries').insert({
-        form_type: 'form_be', company_name, due_date: nextApril20(), created_by: currentUser.id
-      }));
-    } else {
-      // 'ea' and 'both' both create only the Form EA entry — "both" still requires
-      // Finalize -> Finish before its Form BE entry is created, same as any other EA client.
-      // requires_be flags it so the EA list can show a "BE required" tag in the meantime.
-      ({ error } = await sb.from('form_entries').insert({
-        form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id,
-        requires_be: tripleMode === 'both'
-      }));
-    }
+    // 'ea' and 'both' both create only the Form EA entry — "both" still requires
+    // Finalize -> Create BE before its Form BE entry is created, same as any other EA client.
+    // requires_be flags it so the EA list shows the "BE required" tag and the Create BE button.
+    const { error } = await sb.from('form_entries').insert({
+      form_type: 'form_ea', company_name, due_date: nextFeb14(), created_by: currentUser.id,
+      requires_be: tripleMode === 'both'
+    });
 
     btn.disabled = false; btn.textContent = 'Save';
     if (error) { errEl.textContent = 'Could not save: ' + error.message; return; }
 
     closeTripleForm();
     showToast(`${company_name} added.`);
-    activeSubForm = (tripleMode === 'be') ? 'form_be' : 'form_ea';
+    activeSubForm = 'form_ea';
     await loadFormEntries();
   });
 
