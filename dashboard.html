@@ -341,10 +341,12 @@
 
   <aside class="nav-sidebar" id="navSidebar">
     <button class="nav-toggle" id="navToggle" title="Collapse sidebar">«</button>
-    <button class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label">Dashboard</span></button>
+    <button class="nav-item active" id="navDashboard"><span class="nav-icon">📋</span><span class="nav-label">Dashboard</span></button>
+    <button class="nav-item" id="navActivity"><span class="nav-icon">🕒</span><span class="nav-label">My Activity</span></button>
   </aside>
 
   <main>
+    <div id="dashboardView">
     <div class="dash-search-wrap">
       <input type="text" id="dashSearchInput" placeholder="Search company / client name...">
       <div class="dash-search-results" id="dashSearchResults"></div>
@@ -448,6 +450,33 @@
       </div>
 
         </div>
+      </div>
+    </div>
+    </div> <!-- /dashboardView -->
+
+    <div id="activityView" style="display:none;">
+      <div class="list-panel-header">
+        <h2 id="activityHeading">My Activity</h2>
+      </div>
+
+      <div class="group-tabs" id="activityTabs" style="display:none;">
+        <button type="button" class="group-tab active" data-atab="mine">My Activity</button>
+        <button type="button" class="group-tab" data-atab="staff">Staff Activity</button>
+      </div>
+
+      <div id="activityUserPicker" style="display:none; max-width:360px; margin-bottom:16px;" class="dash-search-wrap">
+        <input type="text" id="activityUserSearch" placeholder="Search staff name...">
+        <div class="dash-search-results" id="activityUserResults"></div>
+      </div>
+      <div id="activityViewingLabel" style="display:none; font-size:13px; color:var(--muted); margin-bottom:12px;"></div>
+
+      <div class="list-table-wrap">
+        <table class="list-table">
+          <thead>
+            <tr><th style="width:190px;">Time</th><th style="width:160px;">User</th><th>Activity</th></tr>
+          </thead>
+          <tbody id="activityBody"><tr><td colspan="3" class="empty-state">Loading...</td></tr></tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -554,11 +583,28 @@
     document.getElementById('navToggle').textContent = sidebar.classList.contains('collapsed') ? '»' : '«';
   });
 
-  /* ---------------- Profiles (for remark author names) ---------------- */
+  /* ---------------- Dashboard / My Activity switch ---------------- */
+  document.getElementById('navDashboard').addEventListener('click', () => {
+    document.getElementById('navDashboard').classList.add('active');
+    document.getElementById('navActivity').classList.remove('active');
+    document.getElementById('dashboardView').style.display = '';
+    document.getElementById('activityView').style.display = 'none';
+  });
+  document.getElementById('navActivity').addEventListener('click', () => {
+    document.getElementById('navActivity').classList.add('active');
+    document.getElementById('navDashboard').classList.remove('active');
+    document.getElementById('dashboardView').style.display = 'none';
+    document.getElementById('activityView').style.display = 'block';
+    openActivityView();
+  });
+
+  /* ---------------- Profiles (for remark author names + admin's staff picker) ---------------- */
+  let profilesList = [];
   async function loadProfiles(){
     const { data, error } = await sb.from('profiles').select('id, full_name, role');
     if (error) return;
     profilesMap = Object.fromEntries(data.map(p => [p.id, p.full_name]));
+    profilesList = data || [];
   }
 
   /* ---------------- Load form entries + remarks ---------------- */
@@ -765,7 +811,6 @@
     closeTripleForm();
     activeSubForm = 'form_ea';
     showArchive = false;
-    remindedKey = null; // clicking a form fresh — show its due-date reminder again
     renderCurrentPanel();
     listPanel.classList.add('open');
     markActiveWidget();
@@ -787,12 +832,12 @@
   }
 
   /* ---------------- Due-date reminder (shown once per form-open, not on every refresh) ---------------- */
-  let remindedKey = null;
+  const remindedForms = new Set(); // forms already reminded this session (cleared by logging out / back in)
   const REMINDER_FORMS = ['form_ea', 'form_be', 'form_e'];
   function maybeShowReminder(){
     const key = currentDataKey();
-    if (!key || !REMINDER_FORMS.includes(key) || key === remindedKey) return;
-    remindedKey = key;
+    if (!key || !REMINDER_FORMS.includes(key) || remindedForms.has(key)) return;
+    remindedForms.add(key);
 
     const pending = activeEntries(key).filter(e => e.status !== 'completed' && e.due_date);
     if (!pending.length) return;
@@ -826,7 +871,6 @@
       showArchive = false;
       closeEntryForm();
       closeTripleForm();
-      remindedKey = null; // switching into EA or BE tab — show its due-date reminder again
       renderCurrentPanel();
     });
   });
@@ -1338,11 +1382,116 @@
     if (!e.target.closest('.dash-search-wrap')) dashSearchResults.classList.remove('open');
   });
 
+  /* ---------------- Activity log ---------------- */
+  async function logActivity(description){
+    if (!currentUser) return;
+    try { await sb.from('activity_log').insert({ actor_id: currentUser.id, description }); }
+    catch (e) { /* non-fatal — never block the user's actual action over a logging failure */ }
+  }
+
+  let activityTab = 'mine';          // 'mine' | 'staff' (admin only)
+  let activityViewingUserId = null;  // which user's log is showing
+  let activityRows = [];
+
+  function openActivityView(){
+    document.getElementById('activityTabs').style.display = isAdmin() ? 'flex' : 'none';
+    document.getElementById('activityUserPicker').style.display = 'none';
+    document.getElementById('activityViewingLabel').style.display = 'none';
+    activityTab = 'mine';
+    activityViewingUserId = currentUser.id;
+    document.querySelectorAll('#activityTabs .group-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.atab === 'mine'));
+    document.getElementById('activityHeading').textContent = 'My Activity';
+    loadActivity();
+  }
+
+  document.querySelectorAll('#activityTabs .group-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activityTab = btn.dataset.atab;
+      document.querySelectorAll('#activityTabs .group-tab').forEach(b => b.classList.toggle('active', b === btn));
+      if (activityTab === 'mine') {
+        activityViewingUserId = currentUser.id;
+        document.getElementById('activityUserPicker').style.display = 'none';
+        document.getElementById('activityViewingLabel').style.display = 'none';
+        document.getElementById('activityHeading').textContent = 'My Activity';
+        loadActivity();
+      } else {
+        activityViewingUserId = null;
+        document.getElementById('activityUserPicker').style.display = 'block';
+        document.getElementById('activityViewingLabel').style.display = 'none';
+        document.getElementById('activityHeading').textContent = 'Staff Activity';
+        document.getElementById('activityUserSearch').value = '';
+        document.getElementById('activityUserResults').classList.remove('open');
+        activityRows = [];
+        renderActivityTable();
+      }
+    });
+  });
+
+  const activityUserSearch = document.getElementById('activityUserSearch');
+  const activityUserResults = document.getElementById('activityUserResults');
+  activityUserSearch.addEventListener('input', () => {
+    const term = activityUserSearch.value.trim().toLowerCase();
+    if (!term) { activityUserResults.classList.remove('open'); activityUserResults.innerHTML = ''; return; }
+    const matches = profilesList.filter(p => p.full_name.toLowerCase().includes(term));
+    activityUserResults.innerHTML = matches.length
+      ? matches.map(p => `
+          <div class="dash-search-item" data-id="${p.id}">
+            <span class="sname">${escapeHtml(p.full_name)}</span>
+            <span class="sform">${p.role === 'head' ? 'Admin' : 'Staff'}</span>
+          </div>`).join('')
+      : `<div class="dash-search-empty">No staff match "${escapeHtml(activityUserSearch.value.trim())}".</div>`;
+    activityUserResults.querySelectorAll('.dash-search-item').forEach(el => {
+      el.addEventListener('click', () => {
+        activityViewingUserId = el.dataset.id;
+        document.getElementById('activityViewingLabel').style.display = 'block';
+        document.getElementById('activityViewingLabel').textContent = `Viewing: ${profilesMap[activityViewingUserId] || 'Unknown'}`;
+        activityUserResults.classList.remove('open');
+        activityUserSearch.value = profilesMap[activityViewingUserId] || '';
+        loadActivity();
+      });
+    });
+    activityUserResults.classList.add('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#activityUserPicker')) activityUserResults.classList.remove('open');
+  });
+
+  async function loadActivity(){
+    if (!activityViewingUserId) { activityRows = []; renderActivityTable(); return; }
+    const { data, error } = await sb.from('activity_log')
+      .select('*').eq('actor_id', activityViewingUserId)
+      .order('created_at', { ascending: false }).limit(300);
+    if (error) {
+      document.getElementById('activityBody').innerHTML = `<tr><td colspan="3" class="empty-state">Could not load activity: ${escapeHtml(error.message)}</td></tr>`;
+      return;
+    }
+    activityRows = data || [];
+    renderActivityTable();
+  }
+  function renderActivityTable(){
+    const body = document.getElementById('activityBody');
+    if (!activityRows.length) {
+      body.innerHTML = `<tr><td colspan="3" class="empty-state">${
+        activityTab === 'staff' && !activityViewingUserId ? 'Search and pick a staff member above to see their activity.' : 'No activity yet.'
+      }</td></tr>`;
+      return;
+    }
+    body.innerHTML = activityRows.map(r => `
+      <tr>
+        <td class="due-cell">${formatTimeMeta(r.created_at)}</td>
+        <td>${escapeHtml(profilesMap[r.actor_id] || 'Unknown')}</td>
+        <td>${escapeHtml(r.description)}</td>
+      </tr>`).join('');
+  }
+
   /* ---------------- Realtime ---------------- */
   function setupRealtime(){
     sb.channel('forms-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'form_entries' }, () => loadFormEntries())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'form_remarks' }, () => loadFormEntries())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, () => {
+        if (document.getElementById('activityView').style.display !== 'none' && activityViewingUserId) loadActivity();
+      })
       .subscribe();
   }
 
