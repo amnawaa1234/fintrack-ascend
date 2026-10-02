@@ -288,6 +288,9 @@
   .list-table.show-e-col .e-col{display:table-cell;}
   .sst-col{display:none;}
   .list-table.show-sst-col .sst-col{display:table-cell;}
+  .pcb-col{display:none;}
+  .list-table.show-pcb-col .pcb-col{display:table-cell;}
+  .list-table.hide-status-col .status-maybe-col{display:none;}
   .e-date-row{display:flex; align-items:center; gap:4px; margin-top:5px;}
   .e-date-input{
     font-size:11px; padding:3px 5px; border:1px solid var(--line); border-radius:5px;
@@ -382,6 +385,27 @@
         </div>
       </div>
 
+      <div class="group-tabs" id="pcbGroupTabs">
+        <button type="button" class="pcb-group-tab group-tab" data-view="form_pcb">Client</button>
+        <button type="button" class="pcb-group-tab group-tab" data-view="form_cp205">Company</button>
+      </div>
+
+      <div class="add-triple-row" id="pcbAddRow">
+        <button type="button" class="triple-btn pcb-triple-btn primary" data-pcbmode="pcb">+ Create PCB</button>
+        <button type="button" class="triple-btn pcb-triple-btn primary" data-pcbmode="cp205">+ Create CP205</button>
+      </div>
+      <div class="add-entry-form" id="pcbAddForm">
+        <h3 id="pcbAddTitle">New client</h3>
+        <label for="pcbEntryName" id="pcbEntryNameLabel">Client name</label>
+        <input type="text" id="pcbEntryName" placeholder="e.g. Ahmad bin Ismail">
+        <div class="ea-note" id="pcbNote"></div>
+        <div class="modal-error" id="pcbFormError"></div>
+        <div class="add-entry-actions">
+          <button id="pcbCancelBtn">Cancel</button>
+          <button class="primary" id="pcbSaveBtn">Save</button>
+        </div>
+      </div>
+
       <div class="list-body-row">
         <div class="month-sidebar" id="monthSidebar"></div>
         <div class="list-main">
@@ -435,16 +459,18 @@
               <th style="width:10%;">Due Date</th>
               <th class="e-col" style="width:13%;">EA</th>
               <th class="e-col" style="width:15%;">Summary Salary</th>
-              <th style="width:13%;" id="thStatus">Status</th>
+              <th class="status-maybe-col" style="width:13%;" id="thStatus">Status</th>
               <th class="sst-col" style="width:12%;">Process</th>
               <th class="sst-col" style="width:12%;">Client Paid On</th>
               <th class="sst-col" style="width:14%;">Make Payment to Customs</th>
+              <th class="pcb-col" style="width:15%;">Payment Received On</th>
+              <th class="pcb-col" style="width:15%;">Paid to LHDN</th>
               <th>Remarks</th>
               <th class="finish-col" id="thFinish" style="width:110px;"></th>
               <th class="admin-col" style="width:44px;"></th>
             </tr>
           </thead>
-          <tbody id="listTableBody"><tr><td colspan="11" class="empty-state">Loading...</td></tr></tbody>
+          <tbody id="listTableBody"><tr><td colspan="13" class="empty-state">Loading...</td></tr></tbody>
         </table>
       </div>
 
@@ -527,19 +553,33 @@
   let profilesMap = {};
 
   const FORMS = [
-    { key: 'form_c',   label: 'Form C',       entity: 'Company' },
-    { key: 'form_be',  label: 'Form EA / BE', entity: 'Client' },
-    { key: 'form_e',   label: 'Form E',       entity: 'Company' },
-    { key: 'form_sst', label: 'Form SST',     entity: 'Company' },
-    { key: 'form_b',   label: 'Form B',       entity: 'Company' }
+    { key: 'form_c',     label: 'Form C',            entity: 'Company' },
+    { key: 'form_be',    label: 'Form EA / BE',      entity: 'Client' },
+    { key: 'form_e',     label: 'Form E',            entity: 'Company' },
+    { key: 'form_sst',   label: 'Form SST',          entity: 'Company' },
+    { key: 'form_b',     label: 'Form B',            entity: 'Company' },
+    { key: 'form_pcb',   label: 'Form CP205 / PCB',  entity: 'Client' },
+    { key: 'form_cp500', label: 'Form CP500',        entity: 'Client' }
   ];
-  let formData = { form_c: [], form_be: [], form_e: [], form_ea: [], form_sst: [], form_b: [] };
+  let formData = {
+    form_c: [], form_be: [], form_e: [], form_ea: [], form_sst: [], form_b: [],
+    form_pcb: [], form_cp205: [], form_cp500: []
+  };
   let activeSubForm = 'form_ea'; // 'form_ea' | 'form_be' — which tab is showing inside the Form EA/BE widget
+  let pcbSubForm = 'form_pcb';   // 'form_pcb' | 'form_cp205' — which tab inside the Form CP205/PCB widget
   let currentListFormType = null;
-  const entityOf = key => (key === 'form_ea' ? 'Client' : (FORMS.find(f => f.key === key) || {}).entity || 'Company');
+  const entityOf = key => {
+    if (key === 'form_ea') return 'Client';
+    if (key === 'form_cp205') return 'Company';
+    return (FORMS.find(f => f.key === key) || {}).entity || 'Company';
+  };
   // Which underlying dataset the generic list is currently showing: the sub-tab when inside
-  // the Form BE widget group, or the widget's own key otherwise.
-  const currentDataKey = () => (currentListFormType === 'form_be' ? activeSubForm : currentListFormType);
+  // the Form BE or Form CP205/PCB widget group, or the widget's own key otherwise.
+  const currentDataKey = () => {
+    if (currentListFormType === 'form_be') return activeSubForm;
+    if (currentListFormType === 'form_pcb') return pcbSubForm;
+    return currentListFormType;
+  };
   let pendingRemark = null; // { entryId, body }
 
   const isAdmin = () => currentProfile && currentProfile.role === 'head';
@@ -625,6 +665,7 @@
   async function loadFormEntries(){
     for (const f of FORMS) formData[f.key] = await loadOneFormType(f.key);
     formData.form_ea = await loadOneFormType('form_ea');
+    formData.form_cp205 = await loadOneFormType('form_cp205');
 
     renderWidgets();
     if (currentListFormType) renderCurrentPanel();
@@ -818,10 +859,16 @@
   function renderCurrentPanel(){
     if (!currentListFormType) return;
     const isGroup = currentListFormType === 'form_be';
+    const isPcbGroup = currentListFormType === 'form_pcb';
     document.getElementById('groupTabs').style.display = isGroup ? 'flex' : 'none';
     document.getElementById('addTripleRow').style.display = isGroup ? 'flex' : 'none';
     if (isGroup) {
-      document.querySelectorAll('.group-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === activeSubForm));
+      document.querySelectorAll('.group-tab:not(.pcb-group-tab)').forEach(btn => btn.classList.toggle('active', btn.dataset.view === activeSubForm));
+    }
+    document.getElementById('pcbGroupTabs').style.display = isPcbGroup ? 'flex' : 'none';
+    document.getElementById('pcbAddRow').style.display = isPcbGroup ? 'flex' : 'none';
+    if (isPcbGroup) {
+      document.querySelectorAll('.pcb-group-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.view === pcbSubForm));
     }
     updateListChrome();
     renderSidebar();
@@ -918,7 +965,7 @@
     const rows = getFilteredEntries(currentDataKey());
     body.innerHTML = rows.length
       ? rows.map(entryRowHtml).join('')
-      : `<tr><td colspan="11" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
+      : `<tr><td colspan="13" class="empty-state">${showArchive ? 'Nothing archived yet.' : 'No entries yet. Click "+ Add client" to add one.'}</td></tr>`;
 
     body.querySelectorAll('.add-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry)));
     body.querySelectorAll('.cancel-remark-btn').forEach(btn => btn.addEventListener('click', () => toggleCompose(btn.dataset.entry, true)));
@@ -1019,7 +1066,7 @@
         <td class="due-cell">${due}</td>
         <td class="e-col status-cell">${eCellHtml('ea_received', eaReceived, 'ea_received_date', entry.ea_received_date)}</td>
         <td class="e-col status-cell">${eCellHtml('salary_received', salaryReceived, 'salary_received_date', entry.salary_received_date)}</td>
-        <td class="status-cell">
+        <td class="status-cell status-maybe-col">
           <select class="status-select status-${status}" data-entry="${entry.id}">
             <option value="pending" ${status === 'pending' ? 'selected' : ''}>${labels.pending}</option>
             <option value="completed" ${status === 'completed' ? 'selected' : ''}>${labels.completed}</option>
@@ -1029,6 +1076,8 @@
         <td class="sst-col">${simpleDateCell('process_date', entry.process_date)}</td>
         <td class="sst-col">${simpleDateCell('client_paid_date', entry.client_paid_date)}</td>
         <td class="sst-col">${simpleDateCell('customs_payment_date', entry.customs_payment_date)}</td>
+        <td class="pcb-col">${simpleDateCell('payment_received_date', entry.payment_received_date)}</td>
+        <td class="pcb-col">${simpleDateCell('paid_lhdn_date', entry.paid_lhdn_date)}</td>
         <td class="remarks-cell">
           <div class="remarks-list">${remarksHtml}</div>
           <button type="button" class="add-remark-btn" data-entry="${entry.id}" title="Add remark">+</button>
